@@ -1,0 +1,66 @@
+# OpenProject EE (unlocked) — minimal self-hosted stack for education use.
+# Builds the local Dockerfile and runs it against a dedicated PostgreSQL.
+# The web container is exposed directly on :8080 (no proxy container).
+#
+#   1. cp .env.example .env  &&  edit .env  (set SECRET_KEY_BASE)
+#   2. docker compose up -d --build
+#   3. open http://localhost:8080   (first login: admin / admin)
+
+x-op-app: &app
+  build: .
+  image: openproject-ee:17.4.0
+  environment: &app-env
+    RAILS_ENV: production
+    DATABASE_URL: "postgres://openproject:${POSTGRES_PASSWORD:-openproject}@db:5432/openproject?pool=20&encoding=unicode&reconnect=true"
+    SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE in .env — generate with: openssl rand -hex 64}
+    OPENPROJECT_HOST__NAME: ${OPENPROJECT_HOST__NAME:-localhost:8080}
+    OPENPROJECT_HTTPS: "false"
+    OPENPROJECT_RAILS__CACHE__STORE: file_store
+  volumes:
+    - opdata:/var/openproject/assets
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: openproject
+      POSTGRES_USER: openproject
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openproject}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openproject -d openproject"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # One-shot migration + seed runner. Must exit 0 before web starts.
+  seeder:
+    <<: *app
+    command: "./docker/prod/seeder"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+  web:
+    <<: *app
+    command: "./docker/prod/web"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      seeder:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health_checks/default"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  opdata:

@@ -1,0 +1,7 @@
+# Local environment — holds SECRET_KEY_BASE and DB password. NEVER commit.
+.env
+.env.local
+.env.*.local
+
+# OS cruft
+.DS_Store
