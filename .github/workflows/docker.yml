@@ -1,13 +1,12 @@
 name: Build & push Docker image
 
-# Build on PRs (validate the Dockerfile builds), build + push on main, version
-# tags, and manual runs. Pushes to GitHub Container Registry using the built-in
-# GITHUB_TOKEN — no secrets to configure.
+# Build on PRs (validate the Dockerfile builds), build + push on main, and manual
+# runs. Image tags mirror the OpenProject version pinned in the Dockerfile
+# (e.g. 17.4.0 / 17.4 / 17). Pushes to GHCR with the built-in GITHUB_TOKEN.
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -42,13 +41,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Read the pinned upstream version from the Dockerfile (e.g. 17.4.0) so the
-      # image can carry an `op-17.4.0` tag telling you which OpenProject it wraps.
+      # Mirror OpenProject's tag scheme: read the pinned version from the
+      # Dockerfile base image and split it into 17.4.0 / 17.4 / 17.
       - name: Extract base OpenProject version
         id: base
         run: |
           version="$(grep -oE 'openproject:[0-9]+\.[0-9]+\.[0-9]+' Dockerfile | head -1 | cut -d: -f2)"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ -z "$version" ]; then
+            echo "::error::Could not parse OpenProject version from Dockerfile" && exit 1
+          fi
+          {
+            echo "version=$version"     # 17.4.0
+            echo "minor=${version%.*}"  # 17.4
+            echo "major=${version%%.*}" # 17
+          } >> "$GITHUB_OUTPUT"
 
       - name: Docker metadata (tags & labels)
         id: meta
@@ -56,12 +62,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=raw,value=${{ steps.base.outputs.version }},enable={{is_default_branch}}
+            type=raw,value=${{ steps.base.outputs.minor }},enable={{is_default_branch}}
+            type=raw,value=${{ steps.base.outputs.major }},enable={{is_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=op-${{ steps.base.outputs.version }},enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=branch
-            type=ref,event=pr
             type=sha,format=short
 
       - name: Build and push
