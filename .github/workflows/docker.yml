@@ -1,8 +1,10 @@
 name: Build & push Docker image
 
 # Build on PRs (validate the Dockerfile builds), build + push on main, and manual
-# runs. Image tags mirror the OpenProject version pinned in the Dockerfile
-# (e.g. 17.4.0 / 17.4 / 17). Pushes to GHCR with the built-in GITHUB_TOKEN.
+# runs. Image tags mirror the OpenProject tag pinned in the Dockerfile: stable
+# tags get rolled-up aliases (17.4.0 / 17.4 / 17 / latest), pre-release tags are
+# published under their exact name only (e.g. 17.6-rc, dev). Pushes to GHCR with
+# the built-in GITHUB_TOKEN.
 
 on:
   push:
@@ -41,31 +43,41 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Mirror OpenProject's tag scheme: read the pinned version from the
-      # Dockerfile base image and split it into 17.4.0 / 17.4 / 17.
-      - name: Extract base OpenProject version
+      # Mirror OpenProject's tag scheme: read the pinned tag from the Dockerfile
+      # base image (strip the "openproject:" prefix and "-slim" suffix). A stable
+      # X.Y.Z tag (17.4.0) also gets minor/major/latest aliases; a pre-release tag
+      # (17.6-rc, dev) is published under its exact name only.
+      - name: Extract base OpenProject tag
         id: base
         run: |
-          version="$(grep -oE 'openproject:[0-9]+\.[0-9]+\.[0-9]+' Dockerfile | head -1 | cut -d: -f2)"
-          if [ -z "$version" ]; then
-            echo "::error::Could not parse OpenProject version from Dockerfile" && exit 1
+          base_tag="$(grep -oE 'openproject:[A-Za-z0-9._-]+-slim' Dockerfile | head -1 | sed -E 's/^openproject://; s/-slim$//')"
+          if [ -z "$base_tag" ]; then
+            echo "::error::Could not parse OpenProject base tag from Dockerfile" && exit 1
           fi
-          {
-            echo "version=$version"     # 17.4.0
-            echo "minor=${version%.*}"  # 17.4
-            echo "major=${version%%.*}" # 17
-          } >> "$GITHUB_OUTPUT"
+          echo "tag=$base_tag" >> "$GITHUB_OUTPUT"   # 17.4.0 | 17.6-rc | dev
+          if printf '%s' "$base_tag" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            {
+              echo "stable=true"
+              echo "minor=${base_tag%.*}"  # 17.4
+              echo "major=${base_tag%%.*}" # 17
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "stable=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Docker metadata (tags & labels)
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # The exact base tag is always pushed on the default branch (17.4.0 or
+          # 17.6-rc); the minor/major/latest rollups are reserved for stable tags
+          # so they never point at a pre-release.
           tags: |
-            type=raw,value=${{ steps.base.outputs.version }},enable={{is_default_branch}}
-            type=raw,value=${{ steps.base.outputs.minor }},enable={{is_default_branch}}
-            type=raw,value=${{ steps.base.outputs.major }},enable={{is_default_branch}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.base.outputs.tag }},enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=raw,value=${{ steps.base.outputs.minor }},enable=${{ steps.base.outputs.stable == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=raw,value=${{ steps.base.outputs.major }},enable=${{ steps.base.outputs.stable == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=raw,value=latest,enable=${{ steps.base.outputs.stable == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
             type=sha,format=short
 
       - name: Build and push
