@@ -162,8 +162,10 @@
         <% blankslate.with_visual_icon(icon: "clock") %>
         <% blankslate.with_heading(tag: :h3).with_content(t("worklogs.timesheet.blank_heading")) %>
         <% blankslate.with_description { t("worklogs.timesheet.blank_description") } %>
-        <% blankslate.with_primary_action(href: new_worklogs_row_path(date: week.to_param, user_id: user.id),
-                                          data: { "turbo-stream": true }).with_content(t("worklogs.timesheet.add_row")) %>
+        <% unless timesheet.locked? %>
+          <% blankslate.with_primary_action(href: new_worklogs_row_path(date: week.to_param, user_id: user.id),
+                                            data: { "turbo-stream": true }).with_content(t("worklogs.timesheet.add_row")) %>
+        <% end %>
       <% end %>
     <% end %>
   </div>

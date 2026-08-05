@@ -1,0 +1,19 @@
+<%= render(Primer::Alpha::Dialog.new(title: dialog_title, subtitle:, size: :medium, id: dialog_id)) do |dialog| %>
+  <% dialog.with_header(variant: :large) %>
+  <% dialog.with_body do %>
+    <%= render(Worklogs::Timesheets::SubmitFormComponent.new(submission:, week:, user:, timesheet:)) %>
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= component_collection do |buttons| %>
+      <% buttons.with_component(Primer::Beta::Button.new(data: { "close-dialog-id": dialog_id })) do %>
+        <%= t("button_cancel") %>
+      <% end %>
+      <% buttons.with_component(Primer::Beta::Button.new(scheme: :primary,
+                                                        form: Worklogs::Timesheets::SubmitFormComponent::FORM_ID,
+                                                        data: { turbo: true },
+                                                        type: :submit)) do %>
+        <%= t("worklogs.approval.submit") %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

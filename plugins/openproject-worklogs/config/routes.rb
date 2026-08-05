@@ -17,6 +17,14 @@ Rails.application.routes.draw do
     # report's own dropdown, where the person choosing one is already standing.
     resources :saved_reports, only: %i[new create edit update destroy]
 
+    # Handing a week in. Keyed by the week, not by an id: there is at most one
+    # submission per person per week, and the grid always knows which week it
+    # is looking at.
+    resource :submission, only: %i[new create destroy]
+
+    # The other side of it.
+    resources :approvals, only: %i[index show update]
+
     resources :cells, only: %i[create]
 
     resources :rows, only: %i[new create destroy] do

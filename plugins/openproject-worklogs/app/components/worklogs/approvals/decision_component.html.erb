@@ -1,0 +1,57 @@
+<%= component_wrapper do %>
+  <div class="worklogs-panel worklogs-decision">
+    <p class="worklogs-panel--heading"><%= t("worklogs.approval.decision_heading") %></p>
+
+    <p class="worklogs-decision--summary"><%= submitted_summary %></p>
+    <% if note %>
+      <p class="worklogs-decision--note">“<%= note %>”</p>
+    <% end %>
+    <% if drifted? %>
+      <p class="worklogs-submit--warning"><%= drift_label %></p>
+    <% end %>
+
+    <% if decidable? || reopenable? %>
+      <%= form_with(url: href, method: :patch, data: { turbo: false }, class: "worklogs-decision--form") do %>
+        <label class="worklogs-submit--field">
+          <span class="worklogs-submit--label"><%= t("worklogs.approval.note") %></span>
+          <textarea name="note" rows="2" maxlength="1000"
+                    placeholder="<%= t('worklogs.approval.decision_note_placeholder') %>"></textarea>
+        </label>
+
+        <div class="worklogs-decision--actions">
+          <% if decidable? %>
+            <button type="submit" name="decision" value="approve" class="worklogs-button -primary">
+              <%= t("worklogs.approval.approve") %>
+            </button>
+            <button type="submit" name="decision" value="reject" class="worklogs-button -danger">
+              <%= t("worklogs.approval.reject") %>
+            </button>
+          <% end %>
+          <% if reopenable? %>
+            <button type="submit" name="decision" value="reopen" class="worklogs-button"
+                    data-turbo-confirm="<%= t('worklogs.approval.reopen_confirm') %>">
+              <%= t("worklogs.approval.reopen") %>
+            </button>
+          <% end %>
+        </div>
+      <% end %>
+    <% elsif submission.submitted? && self_approval? %>
+      <p class="worklogs-decision--blocked"><%= t("worklogs.approval.no_self_approval") %></p>
+    <% end %>
+
+    <p class="worklogs-panel--heading worklogs-decision--trail-heading"><%= t("worklogs.approval.trail_heading") %></p>
+    <ol class="worklogs-trail">
+      <% events.each do |event| %>
+        <li class="worklogs-trail--item">
+          <span class="worklogs-trail--action"><%= event.label %></span>
+          <span class="worklogs-trail--who"><%= event.user.name %></span>
+          <span class="worklogs-trail--when"><%= event_time(event) %></span>
+          <span class="worklogs-trail--hours"><%= worklogs_duration(event.hours) %></span>
+          <% if event.note.present? %>
+            <span class="worklogs-trail--note">“<%= event.note %>”</span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+<% end %>

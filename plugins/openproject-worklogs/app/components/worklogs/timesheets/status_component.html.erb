@@ -1,0 +1,36 @@
+<%= component_wrapper do %>
+  <div class="worklogs-status <%= scheme %>">
+    <div class="worklogs-status--text">
+      <span class="worklogs-status--pill"><%= status_label %></span>
+      <span class="worklogs-status--summary"><%= summary %></span>
+      <% if hours_summary %>
+        <span class="worklogs-status--hours"><%= hours_summary %></span>
+      <% end %>
+      <% if decision_note %>
+        <span class="worklogs-status--note">“<%= decision_note %>”</span>
+      <% end %>
+    </div>
+
+    <div class="worklogs-status--actions">
+      <% if approval_href %>
+        <a class="worklogs-button" href="<%= approval_href %>"><%= t("worklogs.approval.open_approval") %></a>
+      <% end %>
+
+      <% if may_withdraw? %>
+        <%= form_with(url: withdraw_href, method: :delete, data: { turbo: true },
+                      class: "worklogs-status--form") do %>
+          <button type="submit" class="worklogs-button"
+                  data-turbo-confirm="<%= t('worklogs.approval.withdraw_confirm') %>">
+            <%= t("worklogs.approval.withdraw") %>
+          </button>
+        <% end %>
+      <% end %>
+
+      <% if may_submit? %>
+        <a class="worklogs-button -primary" href="<%= submit_href %>" data-turbo-stream="true">
+          <%= t("worklogs.approval.submit") %>
+        </a>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -26,7 +26,18 @@ module OpenProject
                        "worklogs/cells": %i[create],
                        "worklogs/rows": %i[new create destroy copy_previous],
                        "worklogs/reports": %i[index entries],
-                       "worklogs/saved_reports": %i[new create edit update destroy]
+                       "worklogs/saved_reports": %i[new create edit update destroy],
+                       "worklogs/submissions": %i[new create destroy]
+                     },
+                     permissible_on: :global,
+                     require: :loggedin
+
+          # Deciding on somebody else's week. Separate from view_worklogs on
+          # purpose: seeing a timesheet and signing it off are different acts,
+          # and most people who may do the first may not do the second.
+          permission :approve_worklogs,
+                     {
+                       "worklogs/approvals": %i[index show update]
                      },
                      permissible_on: :global,
                      require: :loggedin
@@ -53,7 +64,20 @@ module OpenProject
              caption: :"worklogs.reports.title",
              parent: :worklogs,
              if: ->(*) { User.current.allowed_globally?(:view_worklogs) }
+
+        menu :global_menu,
+             :worklogs_approvals,
+             { controller: "/worklogs/approvals", action: :index },
+             caption: :"worklogs.approval.title",
+             parent: :worklogs,
+             if: ->(*) { User.current.allowed_globally?(:approve_worklogs) }
       end
+
+      # A locked week has to be locked wherever time is written, not only in
+      # this plugin's grid. Both contracts are core's own gate, so the API, the
+      # work package dialog and anything added later go through them too.
+      patch_with_namespace :TimeEntries, :BaseContract
+      patch_with_namespace :TimeEntries, :DeleteContract
     end
   end
 end

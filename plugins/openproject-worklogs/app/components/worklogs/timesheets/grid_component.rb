@@ -41,6 +41,7 @@ module Worklogs
       end
 
       def editable?(row, cell)
+        return false if timesheet.locked?
         return false if cell.split? || cell.ongoing?
 
         if cell.empty?

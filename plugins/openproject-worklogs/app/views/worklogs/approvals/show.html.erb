@@ -1,0 +1,22 @@
+<% content_for :header_tags do %>
+  <%= tag.link(rel: "stylesheet", href: OpenProject::Worklogs::Assets.path("worklogs.css")) %>
+  <%= javascript_include_tag OpenProject::Worklogs::Assets.path("worklogs.js"), defer: true %>
+<% end %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header| %>
+  <% header.with_title { @submission.user.name } %>
+  <% header.with_description do %>
+    <%= t("worklogs.timesheet.week_number", number: @submission.period_start.cweek) %> ·
+    <%= worklogs_week_range(@submission.week) %>
+  <% end %>
+  <% header.with_breadcrumbs([{ href: worklogs_approvals_path, text: t("worklogs.approval.title") },
+                              @submission.user.name]) %>
+<% end %>
+
+<div class="worklogs-page">
+  <%# The decision sits above the week, because the week is the evidence for it
+      and an approver scrolls down to check, not up. %>
+  <%= render(Worklogs::Approvals::DecisionComponent.new(submission: @submission, timesheet: @timesheet)) %>
+  <%= render(Worklogs::Timesheets::StatsComponent.new(timesheet: @timesheet)) %>
+  <%= render(Worklogs::Timesheets::GridComponent.new(timesheet: @timesheet)) %>
+</div>

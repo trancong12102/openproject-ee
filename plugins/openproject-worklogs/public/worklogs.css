@@ -1393,3 +1393,313 @@
   color: var(--fgColor-muted);
   font-size: var(--text-body-size-small, 12px);
 }
+
+/* ============================================================= approvals === */
+
+/* Where the week stands, as one line above the grid. The colour is the whole
+   message: you should be able to tell a locked week from an open one without
+   reading a word. */
+.worklogs-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--base-size-12, 12px);
+  margin-bottom: var(--base-size-16, 16px);
+  padding: var(--base-size-12, 12px) var(--base-size-16, 16px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-left-width: var(--base-size-4, 4px);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+}
+
+.worklogs-status.-open {
+  border-left-color: var(--borderColor-default);
+}
+
+.worklogs-status.-waiting {
+  border-left-color: var(--borderColor-attention-emphasis);
+  background: var(--bgColor-attention-muted);
+}
+
+.worklogs-status.-approved {
+  border-left-color: var(--borderColor-success-emphasis);
+  background: var(--bgColor-success-muted);
+}
+
+.worklogs-status.-returned {
+  border-left-color: var(--borderColor-danger-emphasis);
+  background: var(--bgColor-danger-muted);
+}
+
+.worklogs-status--text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--base-size-8, 8px);
+  min-width: 0;
+}
+
+.worklogs-status--pill {
+  padding: 2px var(--base-size-8, 8px);
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--bgColor-neutral-muted);
+  color: var(--fgColor-default);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  white-space: nowrap;
+}
+
+.worklogs-status.-waiting .worklogs-status--pill {
+  background: var(--bgColor-attention-emphasis);
+  color: var(--fgColor-onEmphasis);
+}
+
+.worklogs-status.-approved .worklogs-status--pill {
+  background: var(--bgColor-success-emphasis);
+  color: var(--fgColor-onEmphasis);
+}
+
+.worklogs-status.-returned .worklogs-status--pill {
+  background: var(--bgColor-danger-emphasis);
+  color: var(--fgColor-onEmphasis);
+}
+
+.worklogs-status--summary {
+  color: var(--fgColor-default);
+}
+
+.worklogs-status--hours {
+  color: var(--fgColor-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.worklogs-status--note {
+  flex-basis: 100%;
+  color: var(--fgColor-muted);
+  font-style: italic;
+}
+
+.worklogs-status--actions {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-8, 8px);
+}
+
+.worklogs-status--form {
+  display: inline;
+}
+
+/* The submit dialog ------------------------------------------------------- */
+
+.worklogs-submit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-12, 12px);
+}
+
+.worklogs-submit--figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-24, 24px);
+}
+
+.worklogs-submit--figure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-title-size-small, 16px);
+  font-variant-numeric: tabular-nums;
+}
+
+.worklogs-submit--figure.-ok strong {
+  color: var(--fgColor-success);
+}
+
+.worklogs-submit--figure.-short strong {
+  color: var(--fgColor-attention);
+}
+
+.worklogs-submit--figure.-over strong {
+  color: var(--fgColor-danger);
+}
+
+.worklogs-submit--label {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-submit--warning {
+  margin: 0;
+  padding: var(--base-size-8, 8px) var(--base-size-12, 12px);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-attention-muted);
+  color: var(--fgColor-attention);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-submit--field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-4, 4px);
+}
+
+.worklogs-submit--field textarea {
+  width: 100%;
+  padding: var(--base-size-8, 8px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  font: inherit;
+  resize: vertical;
+}
+
+.worklogs-submit--caption {
+  margin: 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+/* The approval queue ------------------------------------------------------ */
+
+.worklogs-queue {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.worklogs-queue th,
+.worklogs-queue td {
+  padding: var(--base-size-8, 8px) var(--base-size-12, 12px);
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.worklogs-queue thead th {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.worklogs-queue .-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.worklogs-queue tbody tr:hover {
+  background: var(--bgColor-muted);
+}
+
+.worklogs-queue--waiting {
+  color: var(--fgColor-muted);
+  white-space: nowrap;
+}
+
+/* A week nobody has looked at for over a working week stops being neutral. */
+.worklogs-queue--waiting.-late {
+  color: var(--fgColor-danger);
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-queue--meta {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  white-space: nowrap;
+}
+
+/* The decision ------------------------------------------------------------ */
+
+.worklogs-decision {
+  margin-bottom: var(--base-size-16, 16px);
+}
+
+.worklogs-decision--summary {
+  margin: 0 0 var(--base-size-4, 4px);
+}
+
+.worklogs-decision--note {
+  margin: 0 0 var(--base-size-12, 12px);
+  color: var(--fgColor-muted);
+  font-style: italic;
+}
+
+.worklogs-decision--blocked {
+  margin: var(--base-size-12, 12px) 0 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-decision--form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-8, 8px);
+  margin-top: var(--base-size-12, 12px);
+}
+
+.worklogs-decision--form textarea {
+  width: 100%;
+  max-width: 40rem;
+  padding: var(--base-size-8, 8px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  font: inherit;
+  resize: vertical;
+}
+
+.worklogs-decision--actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-8, 8px);
+}
+
+.worklogs-decision--trail-heading {
+  margin-top: var(--base-size-24, 24px);
+}
+
+/* The trail is append-only, so it reads as a list of facts, not a table you
+   might be able to edit. */
+.worklogs-trail {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+}
+
+.worklogs-trail--item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--base-size-8, 8px);
+  padding: var(--base-size-4, 4px) 0 var(--base-size-4, 4px) var(--base-size-12, 12px);
+}
+
+.worklogs-trail--action {
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-trail--who,
+.worklogs-trail--when,
+.worklogs-trail--hours {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-trail--hours {
+  font-variant-numeric: tabular-nums;
+}
+
+.worklogs-trail--note {
+  flex-basis: 100%;
+  color: var(--fgColor-muted);
+  font-style: italic;
+}

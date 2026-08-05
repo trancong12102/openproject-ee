@@ -41,6 +41,12 @@ column per day, every cell editable in place.
 - **Saved reports**, named and optionally shared. Sharing hands over the
   question, never the answer: opening someone else's report re-runs it as you,
   against your own visible time entries.
+- **Submit a week for approval**, and **`/worklogs/approvals`** for the people who
+  sign weeks off: a queue ordered oldest-first, the whole week as evidence beside
+  the decision, and an append-only history of everything that happened to it.
+- A submitted or approved week is **locked** — enforced on core's own time entry
+  contracts, so the grid, the log-time dialog, the API and anything added later
+  are all refused alike.
 
 ## A report is its URL
 
@@ -52,6 +58,25 @@ is just a name and a sharing flag pinned to those parameters.
 The one thing that rides in the URL without changing a single row of the result
 is `report=<id>`: it says which saved report the page started from, so after a
 filter is nudged the page can show *Edited* and offer to save the change back.
+
+## Submitting a week
+
+A week has five states: open, waiting for approval, approved, sent back and
+reopened. Only *waiting for approval* and *approved* lock it; withdrawing,
+sending back and reopening all hand it back to its owner, and each is a separate
+state rather than one shared "rejected" so the history cannot lie by omission.
+
+Locking is enforced by patching core's `TimeEntries::BaseContract` and
+`TimeEntries::DeleteContract`, not by hiding buttons. `DeleteContract` needs its
+own patch because it does not inherit from the base one. Both the day an entry is
+moving to and the day it came from are checked: moving time out of an approved
+week changes that week's total exactly as much as deleting it would.
+
+Nobody approves their own week except an administrator, and an approver only sees
+a week they could have opened as a timesheet in the first place. The hours
+recorded on a submission are the week's **real** total, not the approver's
+filtered view of it — permissions must not be able to change the number somebody
+is signing.
 
 ## What it does not add
 
@@ -126,6 +151,12 @@ parsing, keyboard movement and autosave on top.
 - A saved report stores parameters, never rows. That is what makes sharing one
   safe, and it is why `SavedReport#query_params` holds `period: "this_month"`
   rather than the dates it resolved to on the day it was saved.
+- `Worklogs::PeriodLock` is asked once per day-and-user and memoised in
+  `RequestStore` for the rest of the request. Without that, saving one cell would
+  run a lock query per contract validation on a page that has forty of them.
+- A submission stores its own `hours` snapshot as well as pointing at the week.
+  When the two disagree — which happens after a reopen — the approval screen says
+  so rather than quietly showing one of them.
 - Per-row Primer `ActionMenu`s were tried and dropped — at ~7.6 KB of markup each
   they made a 40-row week unreasonably heavy. Small icon affordances (CSS-masked
   octicons) are used instead.

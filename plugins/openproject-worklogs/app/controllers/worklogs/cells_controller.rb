@@ -12,6 +12,7 @@ module Worklogs
     before_action :load_target_user
     before_action :load_entity
     before_action :load_week
+    before_action :reject_locked_period
 
     def create
       result = save_cell
@@ -24,6 +25,15 @@ module Worklogs
     end
 
     private
+
+    # The contracts refuse this too, whichever page it comes from. Saying so
+    # here means the grid gets the reason rather than a generic refusal.
+    def reject_locked_period
+      return unless PeriodLock.locked?(user_id: @user.id, on: date)
+
+      render json: { message: I18n.t("worklogs.approval.error_cell_locked") },
+             status: :unprocessable_content
+    end
 
     def save_cell
       entry = existing_entry

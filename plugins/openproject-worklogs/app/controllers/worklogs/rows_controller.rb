@@ -9,6 +9,7 @@ module Worklogs
     authorize_with_global_permission :view_worklogs
 
     before_action :load_week, :load_user
+    before_action :reject_locked_period, except: %i[new]
 
     def new
       @row_pin = RowPin.new(user: @user, week_start: @week.start_date, entity_type: "WorkPackage")
@@ -68,6 +69,15 @@ module Worklogs
     end
 
     private
+
+    # Rows are only pins, but a locked week should not be rearranged either:
+    # an approver came back to a page and found a row that was not there when
+    # they approved it is exactly the confusion locking is for.
+    def reject_locked_period
+      return unless PeriodLock.locked?(user_id: @user.id, on: @week.start_date)
+
+      render_403 message: I18n.t("worklogs.approval.error_cell_locked")
+    end
 
     def refresh_grid
       timesheet = Timesheet.new(user: @user, week: @week, viewer: current_user)

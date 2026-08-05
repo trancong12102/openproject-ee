@@ -1,0 +1,36 @@
+<%= component_wrapper do %>
+  <%= form_with(id: form_id, data: { turbo: true }, **form_options) do %>
+    <% if errors.any? %>
+      <%= render(Primer::Alpha::Banner.new(mb: 3, icon: :stop, scheme: :danger)) { errors.join("\n") } %>
+    <% end %>
+
+    <div class="worklogs-submit">
+      <div class="worklogs-submit--figures">
+        <div class="worklogs-submit--figure">
+          <span class="worklogs-submit--label"><%= t("worklogs.timesheet.daily_total") %></span>
+          <strong><%= logged %></strong>
+        </div>
+        <div class="worklogs-submit--figure">
+          <span class="worklogs-submit--label"><%= t("worklogs.timesheet.capacity") %></span>
+          <strong><%= capacity %></strong>
+        </div>
+        <div class="worklogs-submit--figure <%= difference_scheme %>">
+          <span class="worklogs-submit--label"><%= t("worklogs.stats.difference") %></span>
+          <strong><%= difference_label %></strong>
+        </div>
+      </div>
+
+      <% if empty_days.any? %>
+        <p class="worklogs-submit--warning"><%= empty_days_label %></p>
+      <% end %>
+
+      <label class="worklogs-submit--field">
+        <span class="worklogs-submit--label"><%= t("worklogs.approval.note") %></span>
+        <textarea name="note" rows="3" maxlength="1000"
+                  placeholder="<%= t('worklogs.approval.note_placeholder') %>"></textarea>
+      </label>
+
+      <p class="worklogs-submit--caption"><%= t("worklogs.approval.submit_caption") %></p>
+    </div>
+  <% end %>
+<% end %>

@@ -1,0 +1,55 @@
+<%= component_wrapper do %>
+  <div class="worklogs-panel">
+    <p class="worklogs-panel--heading"><%= t("worklogs.approval.pending_heading") %></p>
+
+    <% if pending.empty? %>
+      <p class="worklogs-drop--empty"><%= t("worklogs.approval.nothing_pending") %></p>
+    <% else %>
+      <table class="worklogs-queue">
+        <thead>
+          <tr>
+            <th><%= t("worklogs.reports.dimensions.user") %></th>
+            <th><%= t("worklogs.approval.period") %></th>
+            <th class="-number"><%= t("worklogs.reports.measures.hours") %></th>
+            <th><%= t("worklogs.approval.waiting") %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% pending.each do |submission| %>
+            <tr>
+              <td><%= submission.user.name %></td>
+              <td><a href="<%= href(submission) %>"><%= period_label(submission) %></a></td>
+              <td class="-number"><%= hours(submission) %></td>
+              <td class="worklogs-queue--waiting <%= waiting_scheme(submission) %>">
+                <%= waiting_label(submission) %>
+              </td>
+              <td class="-number">
+                <a class="worklogs-button" href="<%= href(submission) %>"><%= t("worklogs.approval.review") %></a>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <% if decided.any? %>
+    <div class="worklogs-panel">
+      <p class="worklogs-panel--heading"><%= t("worklogs.approval.decided_heading") %></p>
+      <table class="worklogs-queue">
+        <tbody>
+          <% decided.each do |submission| %>
+            <tr>
+              <td><%= submission.user.name %></td>
+              <td><a href="<%= href(submission) %>"><%= period_label(submission) %></a></td>
+              <td class="-number"><%= hours(submission) %></td>
+              <td><span class="worklogs-status--pill"><%= status_label(submission) %></span></td>
+              <td class="worklogs-queue--meta"><%= decided_summary(submission) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>

@@ -12,6 +12,7 @@
 <%= render(Worklogs::Timesheets::SubHeaderComponent.new(timesheet: @timesheet)) %>
 
 <div class="worklogs-page">
+  <%= render(Worklogs::Timesheets::StatusComponent.new(timesheet: @timesheet)) %>
   <%= render(Worklogs::Timesheets::StatsComponent.new(timesheet: @timesheet)) %>
   <%= render(Worklogs::Timesheets::GridComponent.new(timesheet: @timesheet)) %>
 </div>

@@ -47,6 +47,19 @@ module Worklogs
       @policy ||= Policy.new(viewer:, subject: user)
     end
 
+    def submission
+      return @submission if defined?(@submission)
+
+      @submission = Submission.find_by(user_id: user.id, period_start: week.start_date)
+    end
+
+    # A week waiting on an approver, or already signed off, is closed to
+    # everybody. The grid renders it read-only; core's contracts refuse it
+    # regardless of which page the change comes from.
+    def locked?
+      submission&.locked? || false
+    end
+
     def empty?
       rows.empty?
     end

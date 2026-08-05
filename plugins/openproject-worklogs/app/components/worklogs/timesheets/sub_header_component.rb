@@ -1,6 +1,7 @@
 module Worklogs
   module Timesheets
     class SubHeaderComponent < ApplicationComponent
+      include OpTurbo::Streamable
       include Worklogs::TimesheetHelper
 
       options :timesheet
@@ -48,8 +49,15 @@ module Worklogs
         dialog_time_entries_path(onlyMe: true, date: date.iso8601)
       end
 
+      # Every "change this week" affordance disappears once the week is closed.
+      # Offering a button that the contract will refuse is worse than not
+      # offering it at all.
+      def locked?
+        timesheet.locked?
+      end
+
       def may_log?
-        User.current == user && User.current.allowed_in_any_project?(:log_own_time)
+        !locked? && User.current == user && User.current.allowed_in_any_project?(:log_own_time)
       end
 
       def logged_summary
