@@ -855,6 +855,151 @@
   background: var(--button-primary-bgColor-hover, var(--bgColor-accent-emphasis));
 }
 
+.worklogs-button.-danger {
+  color: var(--fgColor-danger);
+}
+
+.worklogs-button.-danger:hover {
+  background: var(--bgColor-danger-muted);
+}
+
+.worklogs-button.-copied {
+  color: var(--fgColor-success);
+  border-color: var(--borderColor-success-emphasis);
+}
+
+/* Saved reports ----------------------------------------------------------- */
+
+.worklogs-saved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--base-size-8, 8px);
+}
+
+.worklogs-saved--current,
+.worklogs-saved--actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-6, 6px);
+  min-width: 0;
+}
+
+.worklogs-saved--badge {
+  padding: 0 var(--base-size-6, 6px);
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+  font-size: var(--text-body-size-small, 12px);
+  line-height: 20px;
+}
+
+/* "Edited" is the one thing on this bar a person has to act on, so it is the
+   one thing that is not grey. */
+.worklogs-saved--badge.-modified {
+  background: var(--bgColor-attention-muted);
+  color: var(--fgColor-attention);
+}
+
+.worklogs-saved--owner {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-saved--form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.worklogs-drop--group {
+  margin: var(--base-size-4, 4px) 0 0;
+  padding: var(--base-size-4, 4px) var(--base-size-6, 6px);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  letter-spacing: 0.04em;
+}
+
+.worklogs-drop--link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--base-size-8, 8px);
+  padding: var(--base-size-6, 6px);
+  border-radius: var(--borderRadius-medium, 6px);
+  color: var(--fgColor-default);
+}
+
+.worklogs-drop--link:hover {
+  background: var(--bgColor-muted);
+  text-decoration: none;
+}
+
+.worklogs-drop--link.-selected {
+  background: var(--bgColor-accent-muted);
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-drop--link em {
+  flex: none;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-style: normal;
+}
+
+.worklogs-drop--link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Save dialog ------------------------------------------------------------- */
+
+.worklogs-saveform {
+  display: grid;
+  gap: var(--base-size-16, 16px);
+}
+
+.worklogs-saveform--field input[type="text"] {
+  width: 100%;
+  padding: var(--base-size-6, 6px) var(--base-size-8, 8px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  font: inherit;
+}
+
+.worklogs-saveform--label {
+  display: block;
+  margin-bottom: var(--base-size-4, 4px);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+/* What is about to be written down, in the words the filter bar used, so
+   nobody has to save one and reopen it to find out what they saved. */
+.worklogs-saveform--summary p {
+  margin: 0;
+  color: var(--fgColor-default);
+}
+
+.worklogs-saveform--check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--base-size-8, 8px);
+}
+
+.worklogs-saveform--check em {
+  display: block;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-style: normal;
+}
+
 /* A measure is one of three, not a list to scroll: show all of them. */
 .worklogs-segmented {
   display: inline-flex;

@@ -13,6 +13,10 @@ Rails.application.routes.draw do
       end
     end
 
+    # A name pinned to a report's parameters. No :index — the list lives in the
+    # report's own dropdown, where the person choosing one is already standing.
+    resources :saved_reports, only: %i[new create edit update destroy]
+
     resources :cells, only: %i[create]
 
     resources :rows, only: %i[new create destroy] do

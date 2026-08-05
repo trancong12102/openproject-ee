@@ -33,6 +33,13 @@ module Worklogs
       worklogs_reports_path(query.merge(overrides).to_params)
     end
 
+    # Opening a saved report is opening its URL: the parameters are all there in
+    # the address bar, so a saved report and a link someone pasted you are the
+    # same thing arriving by different routes.
+    def worklogs_saved_report_href(saved_report)
+      worklogs_reports_path(saved_report.query.definition_params.merge(report: saved_report.id))
+    end
+
     def worklogs_report_csv_path(query)
       worklogs_reports_path(query.to_params.merge(format: :csv))
     end

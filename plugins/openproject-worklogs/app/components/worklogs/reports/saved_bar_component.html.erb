@@ -1,0 +1,100 @@
+<%= component_wrapper do %>
+  <div class="worklogs-saved">
+    <div class="worklogs-saved--current">
+      <% if any? %>
+        <details class="worklogs-drop" data-worklogs-drop>
+          <summary class="worklogs-drop--chip <%= "-active" if saved_report %>">
+            <span class="worklogs-drop--label"><%= t("worklogs.reports.saved.label") %></span>
+            <span class="worklogs-drop--value"><%= title %></span>
+          </summary>
+          <div class="worklogs-drop--panel -wide">
+            <% if mine.any? %>
+              <p class="worklogs-drop--group"><%= t("worklogs.reports.saved.group_mine") %></p>
+              <ul class="worklogs-drop--options">
+                <% mine.each do |report| %>
+                  <li>
+                    <a class="worklogs-drop--link <%= "-selected" if active?(report) %>"
+                       href="<%= report_href(report) %>">
+                      <span><%= report.name %></span>
+                      <% if report.shared? %>
+                        <em><%= t("worklogs.reports.saved.shared_badge") %></em>
+                      <% end %>
+                    </a>
+                  </li>
+                <% end %>
+              </ul>
+            <% end %>
+
+            <% if shared.any? %>
+              <p class="worklogs-drop--group"><%= t("worklogs.reports.saved.group_shared") %></p>
+              <ul class="worklogs-drop--options">
+                <% shared.each do |report| %>
+                  <li>
+                    <a class="worklogs-drop--link <%= "-selected" if active?(report) %>"
+                       href="<%= report_href(report) %>">
+                      <span><%= report.name %></span>
+                      <em><%= report.user.name %></em>
+                    </a>
+                  </li>
+                <% end %>
+              </ul>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+      <%# The dropdown's own chip already carries the name; repeating it beside
+          itself would take the room the badges need. %>
+      <% if saved_report %>
+        <% if saved_report.shared? %>
+          <span class="worklogs-saved--badge"><%= t("worklogs.reports.saved.shared_badge") %></span>
+        <% end %>
+        <% if owner_caption %>
+          <span class="worklogs-saved--owner"><%= owner_caption %></span>
+        <% end %>
+        <% if modified? %>
+          <span class="worklogs-saved--badge -modified"><%= t("worklogs.reports.saved.modified") %></span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="worklogs-saved--actions">
+      <%# Copying the address bar is the whole sharing story — the URL *is* the
+          report — so the button that does it sits next to the report's name. %>
+      <button type="button" class="worklogs-button" data-worklogs-copy
+              data-worklogs-copied="<%= t('worklogs.reports.saved.link_copied') %>">
+        <%= t("worklogs.reports.saved.copy_link") %>
+      </button>
+
+      <% if saved_report && modified? && editable? %>
+        <%= form_with(url: update_href, method: :patch, data: { turbo: true },
+                      class: "worklogs-saved--form") do %>
+          <%= worklogs_query_hidden_fields(query) %>
+          <%= hidden_field_tag :definition, 1, id: nil %>
+          <button type="submit" class="worklogs-button -primary">
+            <%= t("worklogs.reports.saved.save_changes") %>
+          </button>
+        <% end %>
+      <% end %>
+
+      <a class="worklogs-button <%= "-primary" if saved_report.blank? %>"
+         href="<%= save_href %>" data-turbo-stream="true">
+        <%= t("worklogs.reports.saved.#{saved_report ? 'save_as' : 'save'}") %>
+      </a>
+
+      <% if editable? %>
+        <a class="worklogs-button" href="<%= rename_href %>" data-turbo-stream="true">
+          <%= t("worklogs.reports.saved.rename") %>
+        </a>
+        <%= form_with(url: update_href, method: :delete, data: { turbo: true },
+                      class: "worklogs-saved--form") do %>
+          <%= worklogs_query_hidden_fields(query, except: :report) %>
+          <button type="submit" class="worklogs-button -danger"
+                  data-turbo-confirm="<%= delete_confirmation %>">
+            <%= t("worklogs.reports.saved.delete") %>
+          </button>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

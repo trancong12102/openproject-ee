@@ -488,6 +488,45 @@
     });
   }
 
+  // Sharing a report is sharing its address. The button says so out loud, then
+  // says it worked — a copy that gives no feedback gets pressed three times.
+  function bindCopyLink(button) {
+    button.addEventListener("click", function () {
+      var original = button.textContent;
+      var url = window.location.href;
+
+      var done = function () {
+        button.textContent = button.dataset.worklogsCopied || original;
+        button.classList.add("-copied");
+        window.setTimeout(function () {
+          button.textContent = original;
+          button.classList.remove("-copied");
+        }, 2000);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, function () { legacyCopy(url, done); });
+      } else {
+        legacyCopy(url, done);
+      }
+    });
+  }
+
+  // Plain HTTP and older browsers have no clipboard API; a report link is not
+  // worth losing over the deployment not having a certificate.
+  function legacyCopy(text, done) {
+    var field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "readonly");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    try { document.execCommand("copy"); } catch (error) { /* nothing else to try */ }
+    document.body.removeChild(field);
+    done();
+  }
+
   function closeDropdowns(except) {
     Array.prototype.forEach.call(document.querySelectorAll("[data-worklogs-drop][open]"), function (details) {
       if (details !== except) details.open = false;
@@ -514,6 +553,12 @@
       if (details.dataset.worklogsBound === "1") return;
       details.dataset.worklogsBound = "1";
       bindDropdown(details);
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-worklogs-copy]"), function (button) {
+      if (button.dataset.worklogsBound === "1") return;
+      button.dataset.worklogsBound = "1";
+      bindCopyLink(button);
     });
   }
 

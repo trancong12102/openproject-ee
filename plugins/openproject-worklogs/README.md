@@ -25,6 +25,31 @@ column per day, every cell editable in place.
 - Anything a bare number cannot express — comment, activity, start and end time —
   opens OpenProject's own time entry dialog rather than a second implementation
   of it.
+- **`/worklogs/reports`** — a pivot over the same time entries: rows grouped up
+  to two levels deep by user, project, work package, type, status, activity or a
+  time bucket, with any of those again as a column axis, measured in hours, cost
+  or number of entries.
+- Filters for period (nine presets plus a custom range), project, user, activity,
+  type and status. The pickers only offer what has time in the period, so nobody
+  scrolls past names with nothing behind them.
+- Every figure in the pivot — subtotals included — opens the entries behind it.
+  Without that a report is a set of assertions the reader has to take on trust.
+- Bars for the biggest rows, a trend strip when the report has a time axis, and
+  **Export CSV** with the same rows, order and totals as the screen.
+- **Saved reports**, named and optionally shared. Sharing hands over the
+  question, never the answer: opening someone else's report re-runs it as you,
+  against your own visible time entries.
+
+## A report is its URL
+
+There is no report state on the server. Every control on the page is a link back
+to the same action with one parameter changed, so the back button, bookmarks and
+"copy this to a colleague" all work with nothing to maintain — and a saved report
+is just a name and a sharing flag pinned to those parameters.
+
+The one thing that rides in the URL without changing a single row of the result
+is `report=<id>`: it says which saved report the page started from, so after a
+filter is nudged the page can show *Edited* and offer to save the change back.
 
 ## What it does not add
 
@@ -77,6 +102,17 @@ parsing, keyboard movement and autosave on top.
   refreshed figures in the same JSON response (`stats`, `day_difference`,
   `week_difference`) rather than triggering a second request, and `/worklogs/grid`
   returns both fragments so a dialog-driven refresh cannot leave them disagreeing.
+- A report is one grouped query however many ways it is sliced: each dimension
+  is a single SQL expression (`Reports::Dimension#expression`), and the labels
+  behind a whole column of group keys are resolved in one query per dimension.
+- `Reports::Scope` is the only place the report meets the database, and it starts
+  from `TimeEntry.visible(viewer)` — core's own scope. Everything downstream can
+  narrow it and nothing can widen it. Work packages are joined with a LEFT JOIN,
+  or time logged on meetings would silently vanish from every report grouped by
+  type or status.
+- A saved report stores parameters, never rows. That is what makes sharing one
+  safe, and it is why `SavedReport#query_params` holds `period: "this_month"`
+  rather than the dates it resolved to on the day it was saved.
 - Per-row Primer `ActionMenu`s were tried and dropped — at ~7.6 KB of markup each
   they made a 40-row week unreasonably heavy. Small icon affordances (CSS-masked
   octicons) are used instead.

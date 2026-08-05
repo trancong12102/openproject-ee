@@ -10,6 +10,8 @@
 <% end %>
 
 <div class="worklogs-page">
+  <%= render(Worklogs::Reports::SavedBarComponent.new(query: @query, saved_report: @saved_report,
+                                                      saved_reports: @saved_reports, viewer: current_user)) %>
   <%= render(Worklogs::Reports::FilterBarComponent.new(query: @query, result: @result, viewer: current_user)) %>
   <%= render(Worklogs::Reports::SummaryComponent.new(query: @query, result: @result)) %>
   <%= render(Worklogs::Reports::ChartComponent.new(query: @query, result: @result)) %>

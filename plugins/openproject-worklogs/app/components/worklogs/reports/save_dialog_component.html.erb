@@ -1,0 +1,19 @@
+<%= render(Primer::Alpha::Dialog.new(title: dialog_title, size: :medium, id: dialog_id)) do |dialog| %>
+  <% dialog.with_header(variant: :large) %>
+  <% dialog.with_body do %>
+    <%= render(Worklogs::Reports::SaveFormComponent.new(saved_report:, query:, mode:)) %>
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= component_collection do |buttons| %>
+      <% buttons.with_component(Primer::Beta::Button.new(data: { "close-dialog-id": dialog_id })) do %>
+        <%= t("button_cancel") %>
+      <% end %>
+      <% buttons.with_component(Primer::Beta::Button.new(scheme: :primary,
+                                                        form: Worklogs::Reports::SaveFormComponent::FORM_ID,
+                                                        data: { turbo: true },
+                                                        type: :submit)) do %>
+        <%= submit_label %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

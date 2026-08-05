@@ -19,7 +19,7 @@ module Worklogs
         columns: nil
       }.freeze
 
-      attr_reader :period, :measure, :row_keys, :column_key,
+      attr_reader :period, :measure, :row_keys, :column_key, :report_id,
                   :user_ids, :project_ids, :activity_ids, :type_ids, :status_ids
       attr_accessor :from, :to
 
@@ -36,13 +36,15 @@ module Worklogs
             project_ids: params[:project_ids],
             activity_ids: params[:activity_ids],
             type_ids: params[:type_ids],
-            status_ids: params[:status_ids]
+            status_ids: params[:status_ids],
+            report: params[:report]
           )
         end
       end
 
       def initialize(period: nil, from: nil, to: nil, measure: nil, rows: nil, columns: nil,
-                     user_ids: nil, project_ids: nil, activity_ids: nil, type_ids: nil, status_ids: nil)
+                     user_ids: nil, project_ids: nil, activity_ids: nil, type_ids: nil, status_ids: nil,
+                     report: nil)
         @period = PERIODS.include?(period.to_s) ? period.to_s : DEFAULTS[:period]
         @measure = MEASURES.include?(measure.to_s) ? measure.to_s : DEFAULTS[:measure]
 
@@ -55,6 +57,7 @@ module Worklogs
         @activity_ids = integer_list(activity_ids)
         @type_ids = integer_list(type_ids)
         @status_ids = integer_list(status_ids)
+        @report_id = Integer(report.to_s, exception: false)
 
         assign_range(from, to)
       end
@@ -89,12 +92,23 @@ module Worklogs
         I18n.t("worklogs.reports.periods.#{period}")
       end
 
-      def to_params
+      # What the report *is*: the part that gets saved, and the part two reports
+      # are compared on to decide whether one has been edited away from the other.
+      # Only a custom range carries its dates. A preset is a question about
+      # *now* — a saved "this month" that came back next month still meaning
+      # August would be a saved report that quietly went stale.
+      def definition_params
         {
-          period:, from: from.iso8601, to: to.iso8601, measure:,
-          rows: row_keys, columns: column_key,
+          period:, measure:, rows: row_keys, columns: column_key,
           user_ids:, project_ids:, activity_ids:, type_ids:, status_ids:
-        }.compact_blank
+        }.merge(custom_range_params).compact_blank
+      end
+
+      # `report` rides along in the URL without changing a single row of the
+      # result: it only says which saved report this page started from, so the
+      # page can offer to save changes back to it after a filter is nudged.
+      def to_params
+        definition_params.merge(report: report_id).compact_blank
       end
 
       # Every control on the page is "this report, with one thing changed".
@@ -111,6 +125,12 @@ module Worklogs
       end
 
       private
+
+      def custom_range_params
+        return {} unless period == "custom"
+
+        { from: from.iso8601, to: to.iso8601 }
+      end
 
       def sanitise_dimensions(keys)
         Array(keys).filter_map { |key| Dimension.find(key)&.key }.uniq

@@ -20,6 +20,8 @@ module Worklogs
 
     def index
       @result = Reports::Result.new(query: @query, viewer: current_user)
+      @saved_reports = SavedReport.visible(current_user).includes(:user).ordered.to_a
+      @saved_report = @saved_reports.find { |report| report.id == @query.report_id }
 
       respond_to do |format|
         format.html

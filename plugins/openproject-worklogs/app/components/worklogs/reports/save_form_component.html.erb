@@ -1,0 +1,35 @@
+<%= component_wrapper do %>
+  <%= form_with(id: form_id, data: { turbo: true }, **form_options) do %>
+    <% if errors.any? %>
+      <%= render(Primer::Alpha::Banner.new(mb: 3, icon: :stop, scheme: :danger)) { errors.join("\n") } %>
+    <% end %>
+
+    <%# The definition travels with the form so "save" writes down the report
+        the user is actually looking at, not the one the server would rebuild
+        from defaults. %>
+    <%= worklogs_query_hidden_fields(query) %>
+
+    <div class="worklogs-saveform">
+      <label class="worklogs-saveform--field">
+        <span class="worklogs-saveform--label"><%= t("worklogs.reports.saved.name") %></span>
+        <input type="text" name="worklogs_saved_report[name]" value="<%= name_value %>"
+               maxlength="255" required autofocus autocomplete="off">
+      </label>
+
+      <div class="worklogs-saveform--summary">
+        <span class="worklogs-saveform--label"><%= t("worklogs.reports.saved.definition") %></span>
+        <p><%= definition_summary %></p>
+      </div>
+
+      <label class="worklogs-saveform--check">
+        <input type="hidden" name="worklogs_saved_report[shared]" value="0">
+        <input type="checkbox" name="worklogs_saved_report[shared]" value="1"
+               <%= "checked" if saved_report.shared? %>>
+        <span>
+          <strong><%= t("worklogs.reports.saved.shared") %></strong>
+          <em><%= shared_caption %></em>
+        </span>
+      </label>
+    </div>
+  <% end %>
+<% end %>

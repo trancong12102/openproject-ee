@@ -25,7 +25,8 @@ module OpenProject
                        "worklogs/timesheets": %i[index grid],
                        "worklogs/cells": %i[create],
                        "worklogs/rows": %i[new create destroy copy_previous],
-                       "worklogs/reports": %i[index entries]
+                       "worklogs/reports": %i[index entries],
+                       "worklogs/saved_reports": %i[new create edit update destroy]
                      },
                      permissible_on: :global,
                      require: :loggedin
