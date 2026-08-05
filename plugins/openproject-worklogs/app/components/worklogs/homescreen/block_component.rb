@@ -25,7 +25,7 @@ module Worklogs
       end
 
       def timesheet
-        @timesheet ||= Timesheet.new(user:, week:, viewer: user)
+        @timesheet ||= Timesheet.new(user:, span: week, viewer: user)
       end
 
       delegate :capacity, :submission, to: :timesheet

@@ -57,6 +57,17 @@
     return String(round(hours));
   }
 
+  // A grid with no context attribute, or a malformed one, still saves cells —
+  // it just sends nothing extra, and the server falls back to this week.
+  function parseContext(raw) {
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw) || {};
+    } catch (error) {
+      return {};
+    }
+  }
+
   /* ----------------------------------------------------------------- grid */
 
   function Grid(root) {
@@ -64,7 +75,10 @@
     this.updateUrl = root.dataset.updateUrl;
     this.gridUrl = root.dataset.gridUrl;
     this.entryDialogTemplate = root.dataset.entryDialogTemplate;
-    this.week = root.dataset.week;
+    // Which sheet this grid is: span, span start, whose, filtered how. Sent
+    // back with every saved cell so the server recomputes the same totals the
+    // page is showing rather than an unfiltered week's.
+    this.context = parseContext(root.dataset.context);
     this.userId = root.dataset.userId;
     this.bind();
   }
@@ -278,8 +292,6 @@
     }
 
     var payload = {
-      week: this.week,
-      user_id: this.userId,
       date: input.dataset.date,
       hours: hours,
       entry_id: input.dataset.entryId || null,
@@ -287,6 +299,12 @@
       entity_id: input.dataset.entityId,
       activity_id: input.dataset.activityId || null
     };
+
+    // The cell's own date wins: the context carries the span's under its own
+    // name, so neither can overwrite the other.
+    for (var key in this.context) {
+      if (Object.prototype.hasOwnProperty.call(this.context, key)) payload[key] = this.context[key];
+    }
 
     input.value = format(hours);
     this.markCell(input, "-saving");
@@ -346,13 +364,13 @@
     if (remove) remove.classList.toggle("-hidden", Boolean(body.row_total));
 
     this.setText("[data-worklogs-day-total='" + cssEscape(input.dataset.date) + "']", format(body.day_total));
-    this.setText("[data-worklogs-grand-total]", format(body.week_total) || "0");
+    this.setText("[data-worklogs-grand-total]", format(body.span_total) || "0");
 
     this.applyDifference(
       this.root.querySelector("[data-worklogs-day-difference='" + cssEscape(input.dataset.date) + "']"),
       body.day_difference
     );
-    this.applyDifference(this.root.querySelector("[data-worklogs-week-difference]"), body.week_difference);
+    this.applyDifference(this.root.querySelector("[data-worklogs-span-difference]"), body.span_difference);
     applyStats(body.stats);
 
     this.markCell(input, "-saved");
@@ -376,7 +394,7 @@
   function applyStats(stats) {
     if (!stats) return;
 
-    setDocumentText("[data-worklogs-week-total]", stats.logged);
+    setDocumentText("[data-worklogs-span-total]", stats.logged);
     setDocumentText("[data-worklogs-complete-days]", String(stats.complete_days));
 
     var bar = document.querySelector("[data-worklogs-progress]");

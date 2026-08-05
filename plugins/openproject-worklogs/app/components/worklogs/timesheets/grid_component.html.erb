@@ -1,10 +1,10 @@
 <%= component_wrapper do %>
-  <div class="worklogs-grid"
+  <div class="worklogs-grid <%= "-month" if month? %>"
        data-worklogs-grid
        data-update-url="<%= worklogs_cells_path %>"
        data-grid-url="<%= grid_url %>"
        data-entry-dialog-template="<%= entry_dialog_template %>"
-       data-week="<%= week.to_param %>"
+       data-context="<%= cell_context %>"
        data-user-id="<%= user.id %>">
 
     <% if any_rows? %>
@@ -18,6 +18,11 @@
               <% dates.each do |date| %>
                 <th scope="col" class="<%= column_classes(date).join(' ') %>"
                     <%= "title=#{non_working_reason(date).label.inspect}".html_safe if non_working_reason(date) %>>
+                  <% if week_start?(date) %>
+                    <%# Thirty-one columns read as one undifferentiated smear
+                        without something to count weeks by. %>
+                    <span class="worklogs-grid--week-tag"><%= week_tag(date) %></span>
+                  <% end %>
                   <span class="worklogs-grid--day-name"><%= worklogs_day_name(date) %></span>
                   <span class="worklogs-grid--day-number"><%= date.day %></span>
                   <span class="worklogs-grid--day-capacity">
@@ -150,8 +155,8 @@
                   <%= day_difference_label(date) %>
                 </td>
               <% end %>
-              <td class="worklogs-grid--grand-total <%= week_difference_class %>" data-worklogs-week-difference>
-                <%= week_difference_label %>
+              <td class="worklogs-grid--grand-total <%= span_difference_class %>" data-worklogs-span-difference>
+                <%= span_difference_label %>
               </td>
             </tr>
           </tfoot>
@@ -161,9 +166,13 @@
       <%= render(Primer::Beta::Blankslate.new(border: false)) do |blankslate| %>
         <% blankslate.with_visual_icon(icon: "clock") %>
         <% blankslate.with_heading(tag: :h3).with_content(t("worklogs.timesheet.blank_heading")) %>
-        <% blankslate.with_description { t("worklogs.timesheet.blank_description") } %>
+        <%# An empty sheet and a sheet emptied by a filter look identical, and
+            only one of them is fixed by adding a row. %>
+        <% blankslate.with_description do %>
+          <%= t(timesheet.filtered? ? "worklogs.timesheet.blank_filtered" : "worklogs.timesheet.blank_description") %>
+        <% end %>
         <% unless timesheet.locked? %>
-          <% blankslate.with_primary_action(href: new_worklogs_row_path(date: week.to_param, user_id: user.id),
+          <% blankslate.with_primary_action(href: add_row_path,
                                             data: { "turbo-stream": true }).with_content(t("worklogs.timesheet.add_row")) %>
         <% end %>
       <% end %>

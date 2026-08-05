@@ -69,6 +69,38 @@ check "the settings page renders"    200 "$(status /admin/worklogs)"
 check "the grid fragment answers"    200 "$(status /worklogs/grid)"
 
 echo
+echo "Spans and filters"
+check "the month timesheet renders"  200 "$(status '/worklogs?span=month')"
+check "a past month renders"         200 "$(status '/worklogs?span=month&date=2020-02-01')"
+check "the month grid fragment answers" 200 "$(status '/worklogs/grid?span=month')"
+check "a filtered timesheet renders" 200 "$(status '/worklogs?project_ids%5B%5D=1&activity_ids%5B%5D=1')"
+check "a nonsense span is still a page" 200 "$(status '/worklogs?span=fortnight&date=not-a-date')"
+check "an anchored month report renders" 200 "$(status '/worklogs/reports?period=month&from=2026-02-01')"
+check "an anchored quarter report renders" 200 "$(status '/worklogs/reports?period=quarter&from=2026-04-15')"
+check "the new filters are accepted"  200 "$(status '/worklogs/reports?assignee_ids%5B%5D=0&priority_ids%5B%5D=1&version_ids%5B%5D=1&work_package_ids%5B%5D=1&text=invoice')"
+check "grouping by assignee renders" 200 "$(status '/worklogs/reports?rows%5B%5D=assignee&columns=month')"
+check "an anchored coverage period renders" 200 "$(status '/worklogs/coverage?period=month&from=2026-01-01')"
+
+# The month view is the one page where a column per day could quietly collapse
+# back to seven, and a status code would not say so.
+MONTH_BODY="$(body '/worklogs?span=month')"
+if grep -q 'worklogs-grid -month' <<<"$MONTH_BODY" && grep -q 'worklogs-grid--week-tag' <<<"$MONTH_BODY"; then
+  PASSED=$((PASSED + 1))
+  echo "  ok    the month grid is drawn a month wide"
+else
+  FAILED=$((FAILED + 1))
+  echo "  FAIL  the month grid is drawn a month wide"
+fi
+
+if grep -q 'worklogs-stepper--arrow' <<<"$(body /worklogs/reports)"; then
+  PASSED=$((PASSED + 1))
+  echo "  ok    the report period can be stepped"
+else
+  FAILED=$((FAILED + 1))
+  echo "  FAIL  the report period can be stepped"
+fi
+
+echo
 echo "Exports"
 check "the coverage CSV downloads"   200 "$(status '/worklogs/coverage?format=csv')"
 check "the report CSV downloads"     200 "$(status '/worklogs/reports?format=csv')"

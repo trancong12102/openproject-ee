@@ -1,6 +1,8 @@
 module Worklogs
   module Timesheets
-    # The weekly grid: one row per (work package, activity), one column per day.
+    # The grid: one row per (work package, activity), one column per day of
+    # whatever span the sheet is showing — seven for a week, thirty-one for a
+    # month.
     #
     # Every editable cell renders a real <input>, so tabbing through the week and
     # screen-reader navigation work without any JavaScript. The bundled script
@@ -11,10 +13,24 @@ module Worklogs
 
       options :timesheet
 
-      delegate :week, :groups, :capacity, :policy, :user, to: :timesheet
+      delegate :span, :groups, :capacity, :policy, :user, to: :timesheet
 
       def dates
-        week.dates
+        span.dates
+      end
+
+      def month?
+        span.month?
+      end
+
+      # The Monday of each week after the first, so a month can be read a week
+      # at a time instead of as thirty-one undifferentiated columns.
+      def week_start?(date)
+        month? && date != dates.first && date == date.beginning_of_week(Week.start_day)
+      end
+
+      def week_tag(date)
+        "W#{date.cweek}"
       end
 
       def today?(date)
@@ -29,6 +45,7 @@ module Worklogs
         classes = ["worklogs-grid--day"]
         classes << "-today" if today?(date)
         classes << "-non-working" if non_working_reason(date)
+        classes << "-week-start" if week_start?(date)
         classes
       end
 
@@ -40,8 +57,10 @@ module Worklogs
         classes
       end
 
+      # Per date, not per sheet: a month is often half signed off, and the
+      # weeks that are still open stay editable inside it.
       def editable?(row, cell)
-        return false if timesheet.locked?
+        return false if timesheet.locked_on?(cell.date)
         return false if cell.split? || cell.ongoing?
 
         if cell.empty?
@@ -92,7 +111,19 @@ module Worklogs
       end
 
       def grid_url
-        worklogs_grid_path(date: week.to_param, user_id: user.id)
+        worklogs_grid_href(timesheet)
+      end
+
+      # What the browser sends back with a saved cell, so the reply is computed
+      # over the same span and the same filters the page is showing — a total
+      # recomputed unfiltered would disagree with the column it sits under.
+      #
+      # The span's own date travels as `span_date`, because `date` in that
+      # payload is the cell's.
+      def cell_context
+        worklogs_timesheet_params(timesheet)
+          .transform_keys { |key| key == :date ? :span_date : key }
+          .to_json
       end
 
       ENTRY_ID_PLACEHOLDER = "__entry_id__".freeze
@@ -137,7 +168,11 @@ module Worklogs
       end
 
       def remove_row_path(row)
-        worklogs_row_path(row.key, date: week.to_param, user_id: user.id)
+        worklogs_row_path(row.key, worklogs_timesheet_params(timesheet))
+      end
+
+      def add_row_path
+        new_worklogs_row_path(worklogs_timesheet_params(timesheet))
       end
 
       # Only rows that hold nothing can be dropped from the week; a row with
@@ -196,22 +231,22 @@ module Worklogs
         classes
       end
 
-      # Deliberately the sum of the day cells to its left — the whole week's
+      # Deliberately the sum of the day cells to its left — the whole span's
       # capacity, not just the part of it that has already happened.
-      def week_difference
+      def span_difference
         (timesheet.total - capacity.total).round(2)
       end
 
-      def week_difference_label
-        return "0" if week_difference.zero?
+      def span_difference_label
+        return "0" if span_difference.zero?
 
-        "#{week_difference.negative? ? '−' : '+'}#{worklogs_hours(week_difference.abs)}"
+        "#{span_difference.negative? ? '−' : '+'}#{worklogs_hours(span_difference.abs)}"
       end
 
-      def week_difference_class
-        return "-met" if week_difference.zero?
+      def span_difference_class
+        return "-met" if span_difference.zero?
 
-        week_difference.negative? ? "-under" : "-over"
+        span_difference.negative? ? "-under" : "-over"
       end
     end
   end

@@ -9,7 +9,7 @@ module Worklogs
     def missing_time(user, week_start)
       @user = user
       @week = Week.new(week_start.to_date)
-      @timesheet = Timesheet.new(user: @user, week: @week, viewer: @user)
+      @timesheet = Timesheet.new(user: @user, span: @week, viewer: @user)
       @row = summary
 
       open_project_headers User: user.name

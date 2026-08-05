@@ -1,6 +1,6 @@
 module Worklogs
   module Timesheets
-    # Puts an empty row on the week so the user can plan first and log later.
+    # Puts an empty row on the sheet so the user can plan first and log later.
     class AddRowDialogComponent < ApplicationComponent
       include ApplicationHelper
       include OpTurbo::Streamable
@@ -8,7 +8,7 @@ module Worklogs
 
       DIALOG_ID = "worklogs-add-row-dialog".freeze
 
-      options :row_pin, :week, :user
+      options :row_pin, :context
 
       private
 

@@ -37,8 +37,25 @@ module Worklogs
       @start_date = start_date
     end
 
+    # The three questions a timesheet asks of whatever period it was handed;
+    # `Month` answers them too, and nothing above here needs to know which it
+    # is holding. See Worklogs::Span.
+    def kind = "week"
+    def week? = true
+    def month? = false
+
+    # A week is one week. Said out loud so the month view's "every week that
+    # touches this period" works on either.
+    def weeks
+      [self]
+    end
+
     def end_date
       start_date + (LENGTH - 1)
+    end
+
+    def length
+      LENGTH
     end
 
     def range
@@ -67,6 +84,12 @@ module Worklogs
 
     def to_param
       start_date.iso8601
+    end
+
+    # A week is the default span, so it does not carry one: /worklogs?date=…
+    # stays the URL it has always been.
+    def to_params
+      { date: to_param }
     end
 
     def ==(other)

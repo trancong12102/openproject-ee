@@ -1,22 +1,27 @@
 module Worklogs
   module Timesheets
-    # The four numbers a person actually acts on when they open their week:
+    # The four numbers a person actually acts on when they open their sheet:
     # how much is logged, whether they are on track *today*, how many days are
-    # done, and which days are still empty.
+    # done, and which days are still empty. A month answers all four the same
+    # way a week does, over more days.
     class StatsComponent < ApplicationComponent
       include OpTurbo::Streamable
       include Worklogs::TimesheetHelper
 
+      # Beyond this many, the list of empty days stops being readable and the
+      # count says more than the names would.
+      MAX_NAMED_DAYS = 4
+
       options :timesheet
 
-      delegate :week, :capacity, :user, to: :timesheet
+      delegate :span, :capacity, :user, to: :timesheet
 
       def logged
         timesheet.total
       end
 
-      # Whole-week capacity for a past or future week, capacity up to today for
-      # the current one — see Capacity#expected_so_far.
+      # The whole span's capacity for a past or future one, capacity up to
+      # today for the current one — see Capacity#expected_so_far.
       def expected
         @expected ||= capacity.expected_so_far
       end
@@ -71,6 +76,10 @@ module Worklogs
 
       def missing_label
         return I18n.t("worklogs.stats.nothing_missing") if missing_days.empty?
+        # A month can be missing twenty days, and twenty day names is a
+        # paragraph rather than a figure. Name them while they still fit.
+        return I18n.t("worklogs.stats.missing_count", count: missing_days.size) if
+          missing_days.size > MAX_NAMED_DAYS
 
         missing_days.map { |date| worklogs_day_name(date) }.join(", ")
       end

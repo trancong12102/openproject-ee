@@ -11,7 +11,7 @@ module Worklogs
 
     before_action :load_target_user
     before_action :load_entity
-    before_action :load_week
+    before_action :load_span
     before_action :reject_locked_period
 
     def create
@@ -79,7 +79,7 @@ module Worklogs
     # The grid recomputes its totals from a freshly built timesheet rather than
     # trusting the browser's arithmetic.
     def cell_payload(entry)
-      timesheet = Timesheet.new(user: @user, week: @week, viewer: current_user)
+      timesheet = self.timesheet
       activity = row_activity(entry)
       row = timesheet.rows.find { |candidate| candidate.key == Row.key_for(@entity, activity) }
       capacity_total = timesheet.capacity.total
@@ -87,7 +87,7 @@ module Worklogs
       {
         stats: stats_payload(timesheet),
         day_difference: day_difference(timesheet, date),
-        week_difference: week_difference_payload(timesheet),
+        span_difference: span_difference_payload(timesheet),
         # A destroyed entry must not leave its id behind on the client, or the
         # next keystroke in that cell would try to update a deleted record.
         entry_id: (entry.id if entry.is_a?(TimeEntry) && !entry.destroyed?),
@@ -99,7 +99,7 @@ module Worklogs
         hours: hours || 0,
         row_total: row&.total || 0,
         day_total: timesheet.daily_total(date),
-        week_total: timesheet.total,
+        span_total: timesheet.total,
         capacity_total:,
         progress: capacity_total.zero? ? 0 : [(timesheet.total / capacity_total * 100).round, 100].min
       }
@@ -123,7 +123,7 @@ module Worklogs
       }
     end
 
-    # Mirrors GridComponent#day_difference_label / #week_difference_label; the
+    # Mirrors GridComponent#day_difference_label / #span_difference_label; the
     # footer row has to move with the cell that was just saved.
     def day_difference(timesheet, on)
       target = timesheet.capacity.hours_for(on)
@@ -132,7 +132,7 @@ module Worklogs
       signed_difference(timesheet.daily_total(on) - target)
     end
 
-    def week_difference_payload(timesheet)
+    def span_difference_payload(timesheet)
       signed_difference(timesheet.total - timesheet.capacity.total)
     end
 
@@ -181,8 +181,22 @@ module Worklogs
       render_404 if @entity.nil?
     end
 
-    def load_week
-      @week = Week.from_param(params[:week])
+    # The span the grid is showing, and the filters it is showing it under, so
+    # the totals sent back are the totals the page is displaying. `span_date`
+    # rather than `date`, because `date` here is the cell's.
+    def load_span
+      @span = Span.for_kind(params[:span], params[:span_date])
+    end
+
+    def timesheet
+      Timesheet.new(user: @user, span: @span, viewer: current_user,
+                    project_ids: id_list(:project_ids), activity_ids: id_list(:activity_ids))
+    end
+
+    def id_list(name)
+      Array(params[name]).flat_map { |value| value.to_s.split(",") }
+                         .filter_map { |value| Integer(value, exception: false) }
+                         .uniq
     end
 
     def error_for(message_key)

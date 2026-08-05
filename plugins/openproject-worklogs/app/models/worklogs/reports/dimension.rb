@@ -8,9 +8,10 @@ module Worklogs
     class Dimension
       Label = Struct.new(:text, :short, :href, :caption, :sort_key, keyword_init: true)
 
-      KEYS = %w[user project entity type status activity day week month quarter year].freeze
+      KEYS = %w[user project entity type status activity assignee priority version
+                day week month quarter year].freeze
       TIME_KEYS = %w[day week month quarter year].freeze
-      WORK_PACKAGE_KEYS = %w[type status].freeze
+      WORK_PACKAGE_KEYS = %w[type status assignee priority version].freeze
 
       class << self
         def find(key)
@@ -57,6 +58,9 @@ module Worklogs
         when "entity" then "(time_entries.entity_type || '-' || time_entries.entity_id)"
         when "type" then "work_packages.type_id"
         when "status" then "work_packages.status_id"
+        when "assignee" then "work_packages.assigned_to_id"
+        when "priority" then "work_packages.priority_id"
+        when "version" then "work_packages.version_id"
         when "activity" then "time_entries.activity_id"
         when "day" then "time_entries.spent_on"
         else "date_trunc('#{key}', time_entries.spent_on)::date"
@@ -76,6 +80,9 @@ module Worklogs
         when "type" then resolve_records(::Type.where(id: keys)) { |t| Label.new(text: t.name) }
         when "status" then resolve_records(Status.where(id: keys)) { |s| Label.new(text: s.name) }
         when "activity" then resolve_records(TimeEntryActivity.where(id: keys)) { |a| Label.new(text: a.name) }
+        when "assignee" then resolve_records(User.where(id: keys)) { |u| Label.new(text: u.name, href: user_path(u)) }
+        when "priority" then resolve_records(IssuePriority.where(id: keys)) { |p| Label.new(text: p.name) }
+        when "version" then resolve_versions(keys)
         else resolve_dates(keys)
         end
       end
@@ -94,6 +101,14 @@ module Worklogs
       def resolve_records(scope)
         scope.each_with_object({}) do |record, result|
           result[record.id.to_s] = yield(record)
+        end
+      end
+
+      # Two projects may each have a "1.0", so the version carries the project
+      # it belongs to as its caption.
+      def resolve_versions(keys)
+        Version.where(id: keys).includes(:project).each_with_object({}) do |version, result|
+          result[version.id.to_s] = Label.new(text: version.name, caption: version.project&.name)
         end
       end
 

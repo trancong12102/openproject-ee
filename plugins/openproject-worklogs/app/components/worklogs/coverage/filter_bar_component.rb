@@ -13,7 +13,33 @@ module Worklogs
       Option = Struct.new(:id, :label, keyword_init: true)
 
       def periods
-        Worklogs::Period::NAMES
+        Worklogs::Period::PRESETS
+      end
+
+      # The same two arrows the report has: any month, quarter or year is a
+      # step away rather than a form to fill in.
+      def previous_period_href
+        worklogs_coverage_path(query.with_period(query.period_object.previous).to_params)
+      end
+
+      def next_period_href
+        worklogs_coverage_path(query.with_period(query.period_object.next).to_params)
+      end
+
+      def previous_period_label
+        I18n.t("worklogs.reports.previous_period", period: query.period_object.previous.label)
+      end
+
+      def next_period_label
+        I18n.t("worklogs.reports.next_period", period: query.period_object.next.label)
+      end
+
+      def period_caption
+        query.period_object.caption
+      end
+
+      def month_value
+        query.from.strftime("%Y-%m")
       end
 
       def groupings

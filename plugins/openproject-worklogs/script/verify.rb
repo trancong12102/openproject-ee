@@ -240,6 +240,95 @@ run.group("Periods and weeks") do
     period = Worklogs::Period.new("custom", from: "2026-03-31", to: "2026-03-01")
     period.range.first <= period.range.last
   end
+
+  # The arrows either side of the period chip. A preset can only be stepped by
+  # resolving it to the anchored period it names, so this is the check that
+  # says the arrows keep working past the first click.
+  run.check("a preset steps into the anchored period it names") do
+    stepped = Worklogs::Period.new("this_month").previous
+    twice = stepped.previous
+
+    stepped.name == "month" && stepped.from == Time.zone.today.last_month.beginning_of_month &&
+      twice.from == (Time.zone.today.last_month.beginning_of_month << 1) && twice.name == "month"
+  end
+
+  run.check("every anchored period survives the round trip through its URL") do
+    Worklogs::Period::ANCHORED.all? do |unit|
+      period = Worklogs::Period.anchored(unit, Date.new(2026, 5, 14))
+
+      Worklogs::Period.from_params(period.to_params) == period &&
+        period.to_params.keys.sort == %i[from period] && period.label.present?
+    end
+  end
+
+  run.check("a month picker's YYYY-MM is understood") do
+    period = Worklogs::Period.new("month", from: "2026-02")
+
+    period.from == Date.new(2026, 2, 1) && period.to == Date.new(2026, 2, 28)
+  end
+
+  # A range with no unit still has a width, and stepping it by anything else
+  # would silently change how much it covers.
+  run.check("a period with no unit steps by its own length") do
+    period = Worklogs::Period.new("last_30_days").previous
+
+    period.custom? && period.length == 30 && period.to == Time.zone.today - 30
+  end
+
+  run.check("stepping never leaves the old dates behind") do
+    query = Worklogs::Reports::Query.from_params({ period: "custom", from: "2026-01-01", to: "2026-01-31" })
+    stepped = query.with_period(Worklogs::Period.anchored("month", Date.new(2026, 6, 3)))
+
+    stepped.to_params[:period] == "month" && stepped.to_params[:from] == "2026-06-01" &&
+      !stepped.to_params.key?(:to) && stepped.from == Date.new(2026, 6, 1)
+  end
+end
+
+# ---------------------------------------------------------------------------
+run.group("Spans") do
+  run.check("a month covers its own days and nothing else") do
+    month = Worklogs::Month.containing(Date.new(2026, 2, 14))
+
+    month.dates.size == 28 && month.start_date == Date.new(2026, 2, 1) &&
+      month.end_date == Date.new(2026, 2, 28) && month.previous.next == month
+  end
+
+  # The weeks at either end of a month belong to it too: a submission covers a
+  # whole week, and a month that ignored the spill would be silent about the
+  # first and last few days it is showing.
+  run.check("a month lists every week that touches it") do
+    month = Worklogs::Month.containing(Date.new(2026, 8, 10))
+    weeks = month.weeks
+
+    weeks.first.include?(month.start_date) && weeks.last.include?(month.end_date) &&
+      weeks.each_cons(2).all? { |a, b| a.next == b }
+  end
+
+  run.check("a week is its own only week, so both spans answer the same questions") do
+    week = Worklogs::Week.current
+
+    week.weeks == [week] && week.kind == "week" && week.week? && !week.month? &&
+      week.to_params == { date: week.to_param }
+  end
+
+  run.check("an unrecognised span is a week rather than an error") do
+    Worklogs::Span.from_params({ span: "fortnight", date: "nonsense" }).is_a?(Worklogs::Week) &&
+      Worklogs::Span.from_params({}).is_a?(Worklogs::Week)
+  end
+
+  run.check("switching span keeps you where you were standing") do
+    week = Worklogs::Week.containing(Date.new(2026, 3, 18))
+    month = Worklogs::Span.switch(week, "month")
+
+    month.is_a?(Worklogs::Month) && month.start_date == Date.new(2026, 3, 1) &&
+      Worklogs::Span.switch(month, "week").is_a?(Worklogs::Week) &&
+      Worklogs::Span.switch(week, "week") == week
+  end
+
+  run.check("a month carries its span in the URL and a week does not") do
+    Worklogs::Month.current.to_params[:span] == "month" &&
+      !Worklogs::Week.current.to_params.key?(:span)
+  end
 end
 
 # ---------------------------------------------------------------------------
@@ -265,13 +354,91 @@ run.group("Capacity") do
     end
 
     run.check("the single-user view agrees with the bulk calendar") do
-      capacity = Worklogs::Capacity.new(user:, week:)
+      capacity = Worklogs::Capacity.new(user:, span: week)
       week.dates.all? { |d| capacity.hours_for(d) == calendar.hours_for(user.id, d) }
     end
 
     run.check("expected-so-far never exceeds the week's capacity") do
-      capacity = Worklogs::Capacity.new(user:, week:)
+      capacity = Worklogs::Capacity.new(user:, span: week)
       capacity.expected_so_far <= capacity.total + 0.001
+    end
+
+    # The same object, asked about more days. If capacity had a week baked into
+    # it anywhere, this is where it would show.
+    run.check("a month's capacity is the sum of the weeks inside it") do
+      month = Worklogs::Month.current
+      whole = Worklogs::Capacity.new(user:, span: month).total
+      by_day = month.dates.sum { |date| Worklogs::Capacity.new(user:, span: month).hours_for(date) }
+
+      (whole - by_day).abs < 0.001 && whole >= Worklogs::Capacity.new(user:, span: week).total
+    end
+  end
+end
+
+# ---------------------------------------------------------------------------
+run.group("Timesheets") do
+  user = User.active.not_builtin.first
+
+  if user.nil?
+    run.skip("timesheets", "no active users on this instance")
+  else
+    month = Worklogs::Month.current
+
+    run.check("a month sheet draws a column for every day of the month") do
+      sheet = Worklogs::Timesheet.new(user:, span: month, viewer: user)
+
+      sheet.dates == month.dates && sheet.dates.size.between?(28, 31)
+    end
+
+    run.check("the sheet's total is the sum of its days") do
+      sheet = Worklogs::Timesheet.new(user:, span: month, viewer: user)
+      summed = sheet.dates.sum { |date| sheet.daily_total(date) }
+
+      (sheet.total - summed).abs < 0.001
+    end
+
+    # A filter that filters nothing is a filter that lies about what is on
+    # screen; one that filters everything must leave the sheet honestly empty.
+    run.check("a project filter narrows the sheet and never widens it") do
+      all = Worklogs::Timesheet.new(user:, span: month, viewer: user)
+      next run.skip("project filter", "nothing logged this month") if all.empty?
+
+      project_id = all.rows.filter_map { |row| row.project&.id }.first
+      kept = Worklogs::Timesheet.new(user:, span: month, viewer: user, project_ids: [project_id])
+      none = Worklogs::Timesheet.new(user:, span: month, viewer: user, project_ids: [-1])
+
+      kept.rows.size <= all.rows.size && kept.total <= all.total + 0.001 &&
+        kept.rows.all? { |row| row.project&.id == project_id } &&
+        none.empty? && none.filtered? && none.filter_count == 1
+    end
+
+    run.check("an unfiltered sheet does not claim to be filtered") do
+      sheet = Worklogs::Timesheet.new(user:, span: month, viewer: user)
+
+      !sheet.filtered? && sheet.filter_count.zero?
+    end
+
+    # The one thing a month view could get badly wrong: locking the whole month
+    # because one week of it was signed off.
+    run.check("a month locks the week that was submitted and no other") do
+      locked = nil
+
+      ActiveRecord::Base.transaction do
+        week = month.weeks[1]
+        Worklogs::SubmissionService.new(actor: user).submit(user:, week:)
+        Worklogs::PeriodLock.invalidate!
+
+        sheet = Worklogs::Timesheet.new(user:, span: month, viewer: user)
+        other = month.weeks.find { |candidate| candidate != week }
+
+        locked = sheet.locked_on?(week.start_date) && !sheet.locked_on?(other.start_date) &&
+                 sheet.any_locked? && !sheet.locked? && sheet.submission.nil?
+
+        raise ActiveRecord::Rollback
+      end
+
+      Worklogs::PeriodLock.invalidate!
+      locked
     end
   end
 end
@@ -331,6 +498,70 @@ run.group("Coverage arithmetic") do
     by_bucket = result.missing_by_bucket.sum.round(2)
 
     (by_row - result.missing_hours).abs < 0.01 && (by_bucket - result.missing_hours).abs < 0.01
+  end
+end
+
+# ---------------------------------------------------------------------------
+run.group("Report filters") do
+  viewer = User.active.not_builtin.first || User.anonymous
+  base = Worklogs::Reports::Query.from_params({ period: "this_year" })
+  count = ->(query) { Worklogs::Reports::Scope.new(query:, viewer:).relation.count }
+
+  run.check("every filter has a reader, a URL name and a label") do
+    Worklogs::Reports::Query::FILTERS.all? do |name|
+      base.respond_to?(:"#{name}_ids") && base.selected_ids(name) == [] &&
+        I18n.exists?("worklogs.reports.dimensions.#{name == :work_package ? 'entity' : name}")
+    end
+  end
+
+  run.check("filters survive the round trip into a saved report and back") do
+    definition = base.merge(assignee_ids: [0], priority_ids: [1], version_ids: [2],
+                            work_package_ids: [3], text: "invoice").definition_params
+
+    Worklogs::Reports::Query.from_params(definition).definition_params == definition
+  end
+
+  run.check("the text filter counts as a filter") do
+    query = base.merge(text: "invoice")
+
+    query.filters? && query.filter_count == 1 && base.filter_count.zero?
+  end
+
+  # A search box that let its input reach SQL as syntax would turn "%" into
+  # "everything" — the one input where a user cannot tell they are being lied to.
+  run.check("a wildcard in the search box is a character, not a wildcard") do
+    everything = count.call(base)
+    next run.skip("search escaping", "nothing logged this year") if everything.zero?
+
+    count.call(base.merge(text: "%")) < everything
+  end
+
+  run.check("the work package filter never matches time logged elsewhere") do
+    entry = TimeEntry.where(entity_type: "WorkPackage").first
+    next run.skip("work package filter", "no time logged on a work package") if entry.nil?
+
+    filtered = Worklogs::Reports::Scope.new(query: base.merge(work_package_ids: [entry.entity_id]), viewer:)
+                                       .relation
+
+    filtered.all? { |row| row.entity_type == "WorkPackage" && row.entity_id == entry.entity_id }
+  end
+
+  # "Nobody" has to mean a work package with no assignee, not a time entry with
+  # no work package: the left join leaves a meeting's assignee null too.
+  run.check("unassigned means unassigned, not un-work-packaged") do
+    scope = Worklogs::Reports::Scope.new(query: base.merge(assignee_ids: [Worklogs::Reports::Scope::UNASSIGNED]),
+                                         viewer:).relation
+
+    scope.all? { |row| row.entity_type == "WorkPackage" }
+  end
+
+  run.check("the new dimensions group and resolve") do
+    %w[assignee priority version].all? do |key|
+      dimension = Worklogs::Reports::Dimension.find(key)
+
+      dimension&.requires_work_package_join? && dimension.expression.start_with?("work_packages.") &&
+        dimension.resolve([]).empty? && dimension.label.present?
+    end
   end
 end
 

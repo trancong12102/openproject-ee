@@ -1,8 +1,8 @@
 <%= component_wrapper do %>
   <div class="worklogs-stats" data-worklogs-stats>
     <div class="worklogs-stats--tile -primary">
-      <span class="worklogs-stats--label"><%= t("worklogs.stats.logged") %></span>
-      <span class="worklogs-stats--value" data-worklogs-week-total><%= worklogs_duration(logged) %></span>
+      <span class="worklogs-stats--label"><%= t("worklogs.stats.logged.#{span.kind}") %></span>
+      <span class="worklogs-stats--value" data-worklogs-span-total><%= worklogs_duration(logged) %></span>
       <span class="worklogs-stats--caption">
         <%= t("worklogs.stats.of_capacity", capacity: worklogs_duration(capacity.total)) %>
       </span>

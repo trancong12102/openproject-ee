@@ -15,7 +15,7 @@ RSpec.describe Worklogs::ReminderService do
     Setting.plugin_openproject_worklogs = { "reminders_enabled" => true }
     Worklogs::Settings.invalidate!
 
-    capacity = Worklogs::Capacity.new(user: up_to_date, week:)
+    capacity = Worklogs::Capacity.new(user: up_to_date, span: week)
     capacity.working_days.each do |date|
       create(:time_entry, user: up_to_date, project:, spent_on: date,
                           hours: capacity.hours_for(date))
@@ -41,7 +41,7 @@ RSpec.describe Worklogs::ReminderService do
   end
 
   it "leaves alone anybody within the tolerance" do
-    capacity = Worklogs::Capacity.new(user: behind, week:)
+    capacity = Worklogs::Capacity.new(user: behind, span: week)
     capacity.working_days.each do |date|
       create(:time_entry, user: behind, project:, spent_on: date,
                           hours: capacity.hours_for(date) - 0.05)

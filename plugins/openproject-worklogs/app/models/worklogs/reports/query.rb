@@ -7,9 +7,15 @@ module Worklogs
     # back button, bookmarks and "copy this to a colleague" all work without a
     # single line of state-keeping.
     class Query
-      PERIODS = Worklogs::Period::NAMES
+      PERIODS = Worklogs::Period::PRESETS
       MEASURES = %w[hours costs entries].freeze
       MAX_ROW_LEVELS = 2
+
+      # Every list filter, in the order they appear above the report. Adding one
+      # here gives it a reader, a place in the URL, a chip in the bar and a line
+      # in what gets saved; the only thing left is how it reaches SQL, which is
+      # `Scope`'s business.
+      FILTERS = %i[user project activity type status work_package assignee priority version].freeze
 
       DEFAULTS = {
         period: "this_month",
@@ -18,11 +24,12 @@ module Worklogs
         columns: nil
       }.freeze
 
-      attr_reader :measure, :row_keys, :column_key, :report_id,
-                  :user_ids, :project_ids, :activity_ids, :type_ids, :status_ids
+      attr_reader :measure, :row_keys, :column_key, :report_id, :text, :period_object
 
       delegate :from, :to, :range, to: :period_object
       delegate :label, to: :period_object, prefix: :period
+
+      FILTERS.each { |name| attr_reader :"#{name}_ids" }
 
       class << self
         def from_params(params)
@@ -33,19 +40,15 @@ module Worklogs
             measure: params[:measure],
             rows: Array(params[:rows]),
             columns: params[:columns],
-            user_ids: params[:user_ids],
-            project_ids: params[:project_ids],
-            activity_ids: params[:activity_ids],
-            type_ids: params[:type_ids],
-            status_ids: params[:status_ids],
-            report: params[:report]
+            text: params[:text],
+            report: params[:report],
+            **FILTERS.index_with { |name| params[:"#{name}_ids"] }
           )
         end
       end
 
       def initialize(period: nil, from: nil, to: nil, measure: nil, rows: nil, columns: nil,
-                     user_ids: nil, project_ids: nil, activity_ids: nil, type_ids: nil, status_ids: nil,
-                     report: nil)
+                     text: nil, report: nil, **filters)
         @period_object = Worklogs::Period.new(period, from:, to:, default: DEFAULTS[:period])
         @measure = MEASURES.include?(measure.to_s) ? measure.to_s : DEFAULTS[:measure]
 
@@ -53,11 +56,11 @@ module Worklogs
         @row_keys = DEFAULTS[:rows] if @row_keys.empty?
         @column_key = sanitise_dimensions([columns]).first
 
-        @user_ids = integer_list(user_ids)
-        @project_ids = integer_list(project_ids)
-        @activity_ids = integer_list(activity_ids)
-        @type_ids = integer_list(type_ids)
-        @status_ids = integer_list(status_ids)
+        FILTERS.each { |name| instance_variable_set(:"@#{name}_ids", integer_list(filters[name])) }
+
+        # A search box that matched on one character would run the whole table
+        # through a LIKE for nothing.
+        @text = text.to_s.strip.presence
         @report_id = Integer(report.to_s, exception: false)
       end
 
@@ -77,24 +80,31 @@ module Worklogs
         (row_dimensions + [column_dimension]).compact
       end
 
+      def filter_ids
+        FILTERS.map { |name| selected_ids(name) }
+      end
+
       def filters?
-        [user_ids, project_ids, activity_ids, type_ids, status_ids].any?(&:any?)
+        filter_ids.any?(&:any?) || text.present?
       end
 
       def filter_count
-        [user_ids, project_ids, activity_ids, type_ids, status_ids].sum(&:size)
+        filter_ids.sum(&:size) + (text.present? ? 1 : 0)
+      end
+
+      # Which filters need the work package table. Asked before the join is
+      # added, so a report by user never pays for a join it does not read.
+      def work_package_filters?
+        [type_ids, status_ids, assignee_ids, priority_ids, version_ids].any?(&:any?)
       end
 
       # What the report *is*: the part that gets saved, and the part two reports
       # are compared on to decide whether one has been edited away from the other.
-      # Only a custom range carries its dates. A preset is a question about
-      # *now* — a saved "this month" that came back next month still meaning
-      # August would be a saved report that quietly went stale.
       def definition_params
-        {
-          period:, measure:, rows: row_keys, columns: column_key,
-          user_ids:, project_ids:, activity_ids:, type_ids:, status_ids:
-        }.merge(period_object.to_params.except(:period)).compact_blank
+        FILTERS.to_h { |name| [:"#{name}_ids", selected_ids(name)] }
+               .merge(measure:, rows: row_keys, columns: column_key, text:)
+               .merge(period_object.to_params)
+               .compact_blank
       end
 
       # `report` rides along in the URL without changing a single row of the
@@ -113,13 +123,18 @@ module Worklogs
         merge(name => Array(values).reject(&:blank?))
       end
 
+      # A period replaces a period whole. Merging one in would leave the old
+      # `from`/`to` behind, and a preset carrying somebody else's dates is a
+      # report that shows one span under another span's name.
+      def with_period(period)
+        self.class.from_params(to_params.except(:period, :from, :to).merge(period.to_params))
+      end
+
       def selected_ids(name)
         public_send(:"#{name}_ids")
       end
 
       private
-
-      attr_reader :period_object
 
       def sanitise_dimensions(keys)
         Array(keys).filter_map { |key| Dimension.find(key)&.key }.uniq

@@ -28,10 +28,10 @@
                                   label: t("worklogs.timesheet.more_actions")) do |menu| %>
       <% menu.with_item(tag: :a,
                         href: copy_previous_href,
-                        label: t("worklogs.timesheet.copy_previous_week"),
+                        label: copy_previous_label,
                         content_arguments: { data: { turbo: true, "turbo-method": :post } }) do |item| %>
         <% item.with_leading_visual_icon(icon: :copy) %>
-          <% item.with_description.with_content(t("worklogs.timesheet.copy_previous_week_description")) %>
+          <% item.with_description.with_content(copy_previous_description) %>
         <% end %>
       <% end %>
     <% end %>

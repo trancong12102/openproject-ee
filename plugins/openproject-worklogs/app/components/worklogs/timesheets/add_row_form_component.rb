@@ -10,12 +10,14 @@ module Worklogs
 
       FORM_ID = "worklogs-add-row-form".freeze
 
-      options :row_pin, :week, :user
+      options :row_pin, :context
 
       private
 
+      # Carries the whole sheet — span, person, filters — so the grid that
+      # comes back is the grid the row was added from.
       def submit_url_options
-        { url: worklogs_rows_path(date: week.to_param, user_id: user.id), method: :post }
+        { url: worklogs_rows_path(context), method: :post }
       end
 
       def autocompleter_url

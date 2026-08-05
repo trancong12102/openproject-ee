@@ -10,7 +10,7 @@ module Worklogs
 
       DEFAULTS = { period: "this_month", group_by: "week", scope: "everyone" }.freeze
 
-      attr_reader :group_by, :scope, :user_ids, :project_ids
+      attr_reader :group_by, :scope, :user_ids, :project_ids, :period_object
 
       delegate :from, :to, :range, :dates, to: :period_object
       delegate :label, to: :period_object, prefix: :period
@@ -62,6 +62,12 @@ module Worklogs
         self.class.from_params(to_params.merge(overrides.symbolize_keys))
       end
 
+      # A period replaces a period whole; merging one in would leave the old
+      # dates behind, under the new period's name.
+      def with_period(period)
+        self.class.from_params(to_params.except(:period, :from, :to).merge(period.to_params))
+      end
+
       def with_filter(name, values)
         merge(name => Array(values).reject(&:blank?))
       end
@@ -71,8 +77,6 @@ module Worklogs
       end
 
       private
-
-      attr_reader :period_object
 
       def integer_list(values)
         Array(values).flat_map { |value| value.to_s.split(",") }

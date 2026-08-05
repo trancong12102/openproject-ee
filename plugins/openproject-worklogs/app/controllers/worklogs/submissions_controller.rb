@@ -52,7 +52,7 @@ module Worklogs
     end
 
     def timesheet
-      @timesheet ||= Timesheet.new(user: @user, week: @week, viewer: current_user)
+      @timesheet ||= Timesheet.new(user: @user, span: @week, viewer: current_user)
     end
 
     # The sub-header goes too: submitting takes "Add row" and "Log time" away,

@@ -32,7 +32,7 @@ module Worklogs
     # that has happened to the submission. Approving on a total alone is
     # rubber-stamping, so the decision is made next to the detail.
     def show
-      @timesheet = Timesheet.new(user: @submission.user, week: @submission.week, viewer: current_user)
+      @timesheet = Timesheet.new(user: @submission.user, span: @submission.week, viewer: current_user)
     end
 
     def update

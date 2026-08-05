@@ -1,0 +1,92 @@
+<%= component_wrapper do %>
+  <div class="worklogs-controls" data-worklogs-controls>
+    <div class="worklogs-controls--group">
+      <%# Whose sheet ---------------------------------------------------------- %>
+      <% if people? %>
+        <details class="worklogs-drop" data-worklogs-drop>
+          <summary class="worklogs-drop--chip <%= "-active" unless timesheet.policy.own? %>">
+            <span class="worklogs-drop--label"><%= t("worklogs.reports.dimensions.user") %></span>
+            <span class="worklogs-drop--value"><%= user.name %></span>
+          </summary>
+          <div class="worklogs-drop--panel">
+            <input type="search" class="worklogs-drop--search" data-worklogs-drop-search
+                   placeholder="<%= t('worklogs.reports.search_placeholder') %>"
+                   aria-label="<%= t('worklogs.reports.search_placeholder') %>">
+            <ul class="worklogs-drop--options">
+              <% people.each do |person| %>
+                <li data-worklogs-drop-item="<%= person.name.to_s.downcase %>">
+                  <%# A link, not a checkbox: a timesheet belongs to one person,
+                      so picking one is navigation rather than a filter. %>
+                  <a class="worklogs-drop--link <%= "-selected" if person == user %>"
+                     href="<%= person_href(person) %>">
+                    <span><%= person.name %></span>
+                  </a>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </details>
+      <% end %>
+
+      <%# Filters -------------------------------------------------------------- %>
+      <% filters.each do |filter| %>
+        <details class="worklogs-drop" data-worklogs-drop>
+          <summary class="worklogs-drop--chip <%= "-active" if selected_ids(filter).any? %>">
+            <span class="worklogs-drop--label"><%= filter.label %></span>
+            <span class="worklogs-drop--value"><%= chip_value(filter) %></span>
+          </summary>
+          <div class="worklogs-drop--panel">
+            <form method="get" action="<%= worklogs_root_path %>">
+              <%= worklogs_timesheet_hidden_fields(timesheet, except: :"#{filter.name}_ids") %>
+              <% if filter.options.size > 8 %>
+                <input type="search" class="worklogs-drop--search" data-worklogs-drop-search
+                       placeholder="<%= t('worklogs.reports.search_placeholder') %>"
+                       aria-label="<%= t('worklogs.reports.search_placeholder') %>">
+              <% end %>
+              <% if filter.options.empty? %>
+                <p class="worklogs-drop--empty"><%= t("worklogs.reports.no_options") %></p>
+              <% else %>
+                <ul class="worklogs-drop--options">
+                  <% filter.options.each do |option| %>
+                    <li data-worklogs-drop-item="<%= option.label.to_s.downcase %>">
+                      <label class="worklogs-drop--option">
+                        <input type="checkbox" name="<%= filter.name %>_ids[]" value="<%= option.id %>"
+                               <%= "checked" if selected_ids(filter).include?(option.id) %>>
+                        <span><%= option.label %></span>
+                      </label>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+              <div class="worklogs-drop--actions">
+                <button type="submit" class="worklogs-button -primary"><%= t("worklogs.reports.apply") %></button>
+                <% if selected_ids(filter).any? %>
+                  <a class="worklogs-button" href="<%= clear_href(filter) %>"><%= t("worklogs.reports.clear") %></a>
+                <% end %>
+              </div>
+            </form>
+          </div>
+        </details>
+      <% end %>
+
+      <% if filtered? %>
+        <a class="worklogs-controls--clear" href="<%= clear_all_href %>">
+          <%= t("worklogs.reports.clear_all", count: filter_count) %>
+        </a>
+      <% end %>
+    </div>
+
+    <div class="worklogs-controls--group -end">
+      <%# Week or month -------------------------------------------------------- %>
+      <div class="worklogs-segmented" role="group" aria-label="<%= t('worklogs.timesheet.span') %>">
+        <% spans.each do |kind| %>
+          <a class="worklogs-segmented--item <%= "-selected" if span_selected?(kind) %>"
+             href="<%= span_href(kind) %>"
+             <%= 'aria-current="true"'.html_safe if span_selected?(kind) %>>
+            <%= t("worklogs.timesheet.spans.#{kind}") %>
+          </a>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

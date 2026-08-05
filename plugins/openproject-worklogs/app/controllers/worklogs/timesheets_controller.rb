@@ -5,29 +5,42 @@ module Worklogs
     before_action :require_login
     authorize_with_global_permission :view_worklogs
 
-    before_action :load_week, :load_user
+    before_action :load_span, :load_user
 
     menu_item :worklogs_timesheet
 
     layout "global"
 
     def index
-      @timesheet = Timesheet.new(user: @user, week: @week, viewer: current_user)
+      @timesheet = timesheet
     end
 
     # Bare stats + grid fragment, no layout: the browser swaps both in after a
     # core time entry dialog reports a change. The stats strip has to come along
-    # or the week total would keep claiming whatever it said before the dialog.
+    # or the total would keep claiming whatever it said before the dialog.
     def grid
-      @timesheet = Timesheet.new(user: @user, week: @week, viewer: current_user)
+      @timesheet = timesheet
 
       render "grid", layout: false
     end
 
     private
 
-    def load_week
-      @week = Week.from_param(params[:date])
+    def timesheet
+      Timesheet.new(user: @user, span: @span, viewer: current_user,
+                    project_ids: id_list(:project_ids), activity_ids: id_list(:activity_ids))
+    end
+
+    # A week or a month, and which one. Anything unrecognised is this week —
+    # the URL is user-editable, and a typo should land on the ordinary view.
+    def load_span
+      @span = Span.from_params(params)
+    end
+
+    def id_list(name)
+      Array(params[name]).flat_map { |value| value.to_s.split(",") }
+                         .filter_map { |value| Integer(value, exception: false) }
+                         .uniq
     end
 
     def load_user

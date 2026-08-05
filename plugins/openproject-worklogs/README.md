@@ -1,37 +1,46 @@
 # OpenProject Worklogs
 
-A weekly timesheet grid for OpenProject, in the spirit of Jira's *Worklogs — Time
+A timesheet grid for OpenProject, in the spirit of Jira's *Worklogs — Time
 Tracking / Time Reports / Timesheets*: one row per work package and activity, one
 column per day, every cell editable in place.
 
 ## What it adds
 
-- **`/worklogs`** — the weekly grid, reachable from the global modules menu.
+- **`/worklogs`** — the grid, reachable from the global modules menu, showing a
+  **week or a whole month** (`?span=month`) with arrows either side to step.
 - Type `8`, `7.5`, `7,5`, `1h30`, `1h`, `90m`, `1:30` or `:90` into any cell; the
-  value is parsed, saved and the row, day and week totals recomputed server-side.
-- Arrow keys, `Enter` and `Esc` move through the week without touching the mouse.
+  value is parsed, saved and the row, day and span totals recomputed server-side.
+- Arrow keys, `Enter` and `Esc` move through the sheet without touching the mouse.
+- A filter bar over the grid: whose sheet you are looking at (anyone whose time
+  you may see), and which projects and activities to keep.
 - Capacity per day from the user's working hours, with weekends, public holidays
   and absences called out — in the day headers, and again as a `vs. target` row
   under the daily totals.
-- A stats strip above the grid: hours logged against the week's capacity, the
+- A stats strip above the grid: hours logged against the span's capacity, the
   balance against what was due *by today*, how many working days met their
   target, and which past working days are still empty.
 - Each row carries core's own type, id and status line, and a pinned activity
   shows as a chip; cells holding a comment carry a marker that reads it back on
   hover.
-- **Add row** pins a work package on the week before any time is logged, so you
+- **Add row** pins a work package on the sheet before any time is logged, so you
   can lay the week out first and fill it in later. **Copy last week** brings the
-  previous week's rows over without their hours.
+  previous span's rows over without their hours.
 - Anything a bare number cannot express — comment, activity, start and end time —
   opens OpenProject's own time entry dialog rather than a second implementation
   of it.
 - **`/worklogs/reports`** — a pivot over the same time entries: rows grouped up
-  to two levels deep by user, project, work package, type, status, activity or a
-  time bucket, with any of those again as a column axis, measured in hours, cost
-  or number of entries.
-- Filters for period (nine presets plus a custom range), project, user, activity,
-  type and status. The pickers only offer what has time in the period, so nobody
-  scrolls past names with nothing behind them.
+  to two levels deep by user, project, work package, type, status, activity,
+  assignee, priority, version or a time bucket (day, week, month, quarter,
+  year), with any of those again as a column axis, measured in hours, cost or
+  number of entries.
+- Ten filters — user, project, activity, type, status, work package, assignee
+  (including *unassigned*), priority, version, and a search over the entry's own
+  comment — plus the period. The pickers only offer what has time in the period,
+  so nobody scrolls past names with nothing behind them.
+- **Any** week, month, quarter or year, not only the eight presets: arrows either
+  side of the period step it, and a month picker jumps straight to one. Stepping
+  "this month" lands on July, and stepping July lands on June — see *Periods*
+  below for why that needs a third kind of period.
 - Every figure in the pivot — subtotals included — opens the entries behind it.
   Without that a report is a set of assertions the reader has to take on trust.
 - Bars for the biggest rows, and a trend strip when the report has a time axis.
@@ -64,6 +73,53 @@ is just a name and a sharing flag pinned to those parameters.
 The one thing that rides in the URL without changing a single row of the result
 is `report=<id>`: it says which saved report the page started from, so after a
 filter is nudged the page can show *Edited* and offer to save the change back.
+
+## Periods: three kinds, not two
+
+`Worklogs::Period` is the only thing that knows what "last quarter" means, and it
+knows three kinds of period:
+
+- a **preset** — `period=this_month` — is a question about *now* and carries no
+  dates. Saved in a report and reopened in September it means September.
+- an **anchored** period — `period=month&from=2026-08-01` — carries the one date
+  it is anchored to and always means that same August. A week, month, quarter or
+  year, and any date inside the span identifies it.
+- a **custom** range is any two dates.
+
+Anchored periods are what makes stepping work at all. There is no preset for the
+month before last, so a page built only on presets could go back exactly one step
+and then stop. A preset resolves into the anchored period it names — `this_month`
+back one is `month&from=…07-01` — and from there the arrows keep working
+indefinitely, in both directions, over weeks, months, quarters and years alike.
+A range with no unit (`last_30_days`, a custom range) steps by its own width.
+
+The month picker sends `2026-08`, which is not an ISO-8601 date and which
+`Date.iso8601` refuses; `Period` and `Month` both accept it, or every month
+picked would silently have been this one.
+
+## A week or a month
+
+The timesheet takes a **span**: `Worklogs::Week` or `Worklogs::Month`, chosen by
+`?span=`, and deliberately the same shape — start, end, dates, previous, next,
+`weeks`. A month is a wider grid, not a second implementation: the span is asked
+for its dates, capacity is asked per date, and every total is a sum.
+
+Only the two genuinely weekly things reach through `span.weeks`:
+
+- **Submissions.** A month is routinely half signed off, so locking is per *date*
+  (`locked_on?`) rather than per sheet; `locked?` — every week locked — is what
+  the "add row" and "log time" buttons ask, because a month with one open week
+  left still has somewhere to put an hour. No month-shaped approval was invented:
+  a month lists its weeks with their states, each a link to where submitting
+  actually happens.
+- **Row pins.** A month collects every week's pins, and a row added on a month
+  lands in the week you are living in — the current one, if the month contains
+  it, otherwise the month's first.
+
+Switching week ↔ month keeps you where you were standing: the month containing
+the week you were on, and the week containing the 1st — or *today's* week, when
+the month is this one. Anything unrecognised in `?span=` is a week: the URL is
+user-editable, and the right answer to a typo is the ordinary view.
 
 ## Submitting a week
 
@@ -169,12 +225,15 @@ docker compose exec web bin/rails runner \
   plugins/openproject-worklogs/script/verify.rb
 ```
 
-48 checks: that every constant still resolves, that the three permissions and
+72 checks: that every constant still resolves, that the three permissions and
 both menus registered, that every routed action is covered by a permission, that
 core's `TimeEntries` contracts still call our lock validation on update, delete
-and both directions of a move, that settings round-trip and cast, that the
-reminder job is on the cron table hourly, and that en and vi agree key for key.
-It writes inside a transaction and rolls back, so it is safe against real data.
+and both directions of a move, that periods step and anchor, that a month's weeks
+cover it end to end and lock a day at a time, that every report filter reaches
+SQL and that a typed `%` is a character rather than a wildcard, that settings
+round-trip and cast, that the reminder job is on the cron table hourly, and that
+en and vi agree key for key. It writes inside a transaction and rolls back, so it
+is safe against real data.
 
 **From the outside**, over HTTP:
 
@@ -182,9 +241,11 @@ It writes inside a transaction and rolls back, so it is safe against real data.
 plugins/openproject-worklogs/script/smoke.sh http://localhost:8080 admin '<password>'
 ```
 
-16 checks: every page renders, all four export formats download, the
-fingerprinted asset is served and a stale digest is refused, the homescreen block
-is there, and the timesheet is not public.
+28 checks: every page renders, the month sheet draws its week seams, all four
+export formats download, an anchored period and every new filter answer, a
+nonsense span falls back instead of erroring, the fingerprinted asset is served
+and a stale digest is refused, the homescreen block is there, and the timesheet
+is not public.
 
 ### What each failure usually means
 
@@ -252,7 +313,7 @@ parsing, keyboard movement and autosave on top.
   The **stats tile** compares what is logged against capacity *elapsed so far*,
   because "you are 32h short" every Monday is noise. The grid's **`vs. target`
   row** compares each day against its own target and therefore sums, left to
-  right, to the week figure beside it.
+  right, to the span figure beside it.
 - Anything named inside `Redmine::Plugin.register` is read **before Zeitwerk
   exists**, so nothing under `app/` is resolvable there. That is why
   `SETTINGS_DEFAULTS` sits in `engine.rb` itself rather than on
@@ -273,8 +334,16 @@ parsing, keyboard movement and autosave on top.
   you should see back the number you typed.
 - The stats strip is a sibling of the grid, not a child. A saved cell carries its
   refreshed figures in the same JSON response (`stats`, `day_difference`,
-  `week_difference`) rather than triggering a second request, and `/worklogs/grid`
+  `span_difference`) rather than triggering a second request, and `/worklogs/grid`
   returns both fragments so a dialog-driven refresh cannot leave them disagreeing.
+- The grid carries its own context — span, person, filters — as JSON on
+  `data-context`, and every cell save posts it back. Without that, saving a cell
+  on a filtered month would come back with a *week's* unfiltered totals, and the
+  page would disagree with itself over a single keystroke. The span's date rides
+  under `span_date` so it cannot collide with the cell's own `date`.
+- Removing a row from a month unpins it in **every** week the month touches. The
+  × sits on a row drawn from all of them, so unpinning one week would leave the
+  row on screen and read as the button having failed.
 - A report is one grouped query however many ways it is sliced: each dimension
   is a single SQL expression (`Reports::Dimension#expression`), and the labels
   behind a whole column of group keys are resolved in one query per dimension.
@@ -304,7 +373,18 @@ parsing, keyboard movement and autosave on top.
   ends up taking eight seconds.
 - `Worklogs::Period` is the only thing that knows what "last quarter" means. The
   report builder and the coverage page both ask it, because two answers to that
-  question is one too many.
+  question is one too many — stepping and the month picker included.
+- Adding a report filter is one line: put it in `Reports::Query::FILTERS` and it
+  gets a reader, a place in the URL, a chip in the bar and a line in what gets
+  saved. The only thing left is how it reaches SQL, which is `Reports::Scope`'s
+  business — and if it reads a work package column, `work_package_filters?` has
+  to know, or the filter will be applied to a query with no join to apply it to.
+- Two traps live in `Reports::Scope`, both of them a `LEFT JOIN` away from being
+  silently wrong. *Unassigned* must mean a work package with no assignee, not a
+  time entry with no work package — without the `entity_type` guard every hour
+  logged on a meeting would answer to it. And a `%` typed into the comment
+  search is a character somebody is looking for: it goes through
+  `sanitize_sql_like`, or the search box matches the whole table.
 - The reminder cron entry is registered at boot (GoodJob reads its table once)
   but whether anything is sent is a setting read at run time, so switching
   reminders off does not need a restart.

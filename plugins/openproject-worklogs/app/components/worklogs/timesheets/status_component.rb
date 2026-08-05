@@ -3,6 +3,11 @@ module Worklogs
     # Where this week stands: open, waiting on somebody, signed off, or sent
     # back — and the one action that moves it on from there.
     #
+    # A month has no state of its own to show, because a submission is weekly.
+    # It lists the weeks it contains instead, each linking to the week where
+    # the action lives — inventing a month-shaped approval that the approvals
+    # queue knows nothing about would be worse than a list.
+    #
     # Always rendered rather than only when something has happened. A "submit"
     # button that appears only once you already know about submitting is a
     # feature nobody finds.
@@ -13,12 +18,48 @@ module Worklogs
 
       options :timesheet
 
-      delegate :week, :user, :submission, to: :timesheet
+      delegate :span, :user, :submission, to: :timesheet
 
       def render?
         return false unless Settings.approvals_enabled?
+        return own? || timesheet.submissions.any? if span.month?
 
         own? || submission.present?
+      end
+
+      def month?
+        span.month?
+      end
+
+      # One entry per week the month touches, in order, whether or not it has
+      # been handed in: the empty ones are the point.
+      def week_states
+        span.weeks.map do |week|
+          submission = timesheet.submission_for(week)
+
+          WeekState.new(week:, submission:,
+                        status: submission&.status || "open",
+                        href: worklogs_timesheet_href(timesheet, week.to_params.merge(span: nil)))
+        end
+      end
+
+      WeekState = Struct.new(:week, :submission, :status, :href, keyword_init: true) do
+        def label
+          I18n.t("worklogs.timesheet.week_number", number: week.start_date.cweek)
+        end
+
+        def status_label
+          I18n.t("worklogs.approval.statuses.#{status}")
+        end
+
+        def scheme
+          case status
+          when "submitted" then "-waiting"
+          when "approved" then "-approved"
+          when "rejected", "reopened" then "-returned"
+          else "-open"
+          end
+        end
       end
 
       def own?
@@ -65,7 +106,7 @@ module Worklogs
       end
 
       def may_submit?
-        own? && !locked?
+        own? && !locked? && span.week?
       end
 
       def may_withdraw?
@@ -73,11 +114,11 @@ module Worklogs
       end
 
       def submit_href
-        new_worklogs_submission_path(date: week.to_param, user_id: user.id)
+        new_worklogs_submission_path(date: span.to_param, user_id: user.id)
       end
 
       def withdraw_href
-        worklogs_submission_path(date: week.to_param, user_id: user.id)
+        worklogs_submission_path(date: span.to_param, user_id: user.id)
       end
 
       def approval_href
