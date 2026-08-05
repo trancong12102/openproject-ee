@@ -34,8 +34,10 @@ column per day, every cell editable in place.
   scrolls past names with nothing behind them.
 - Every figure in the pivot — subtotals included — opens the entries behind it.
   Without that a report is a set of assertions the reader has to take on trust.
-- Bars for the biggest rows, a trend strip when the report has a time axis, and
-  **Export CSV** with the same rows, order and totals as the screen.
+- Bars for the biggest rows, and a trend strip when the report has a time axis.
+- **Export** the report as CSV, Excel or PDF, or every time entry behind it as
+  CSV or Excel — same rows, same order, same totals as the screen, with the
+  question the report asked written into the file beside the answer.
 - **Saved reports**, named and optionally shared. Sharing hands over the
   question, never the answer: opening someone else's report re-runs it as you,
   against your own visible time entries.
@@ -110,6 +112,17 @@ parsing, keyboard movement and autosave on top.
   narrow it and nothing can widen it. Work packages are joined with a LEFT JOIN,
   or time logged on meetings would silently vanish from every report grouped by
   type or status.
+- All five exports render one shared shape (`Reports::TableData` for the pivot,
+  `Reports::DetailData` for the entries). Three formats each walking the node
+  tree themselves would be three chances to disagree with the screen.
+- CSV and Excel write figures as **numbers**; the PDF writes them as **durations**
+  (`35h 30m`). A spreadsheet is opened to be re-summed and a duration string
+  cannot be; a PDF is only ever read.
+- No gem was added for either: `spreadsheet`, `prawn` and `prawn-table` are
+  already in the image's frozen bundle because core exports work packages with
+  them. The PDF is drawn on core's `Exports::PDF::Common::View` for the same
+  reason it exists at all — Prawn's built-in fonts are WinAnsi and would raise
+  on the first Vietnamese name.
 - A saved report stores parameters, never rows. That is what makes sharing one
   safe, and it is why `SavedReport#query_params` holds `period: "this_month"`
   rather than the dates it resolved to on the day it was saved.

@@ -40,8 +40,13 @@ module Worklogs
       worklogs_reports_path(saved_report.query.definition_params.merge(report: saved_report.id))
     end
 
-    def worklogs_report_csv_path(query)
-      worklogs_reports_path(query.to_params.merge(format: :csv))
+    # Positional, not keyword, arguments on purpose: a trailing options hash on
+    # a method that also takes keywords is read by Ruby as the keywords.
+    def worklogs_report_export_path(query, format, detail = false)
+      params = query.to_params.merge(format:)
+      params[:detail] = 1 if detail
+
+      worklogs_reports_path(params)
     end
 
     # Each filter dropdown is its own GET form, so it has to carry the rest of

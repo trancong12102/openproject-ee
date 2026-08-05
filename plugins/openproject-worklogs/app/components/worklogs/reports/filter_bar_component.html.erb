@@ -145,9 +145,36 @@
         <% end %>
       </div>
 
-      <a class="worklogs-button" href="<%= csv_href %>" download>
-        <%= t("worklogs.reports.export_csv") %>
-      </a>
+      <%# Export --------------------------------------------------------- %>
+      <details class="worklogs-drop" data-worklogs-drop>
+        <summary class="worklogs-drop--chip">
+          <span class="worklogs-drop--value"><%= t("worklogs.reports.export") %></span>
+        </summary>
+        <div class="worklogs-drop--panel -wide">
+          <p class="worklogs-drop--group"><%= t("worklogs.reports.exports.pivot_group") %></p>
+          <ul class="worklogs-drop--options">
+            <% pivot_exports.each do |export| %>
+              <li>
+                <a class="worklogs-drop--link" href="<%= export.href %>" download>
+                  <span><%= export.label %></span>
+                  <em><%= export.caption %></em>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+          <p class="worklogs-drop--group"><%= t("worklogs.reports.exports.detail_group") %></p>
+          <ul class="worklogs-drop--options">
+            <% detail_exports.each do |export| %>
+              <li>
+                <a class="worklogs-drop--link" href="<%= export.href %>" download>
+                  <span><%= export.label %></span>
+                  <em><%= export.caption %></em>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </details>
     </div>
   </div>
 <% end %>

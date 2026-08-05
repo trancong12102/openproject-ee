@@ -72,8 +72,23 @@ module Worklogs
                                     type_ids: [], status_ids: [])
       end
 
-      def csv_href
-        worklogs_report_csv_path(query)
+      Export = Struct.new(:label, :caption, :href, keyword_init: true)
+
+      # Two shapes, three formats. The pivot for reading and for filing; every
+      # entry for the person who has to reconcile it against an invoice.
+      def pivot_exports
+        [
+          export(:csv, "csv", false),
+          export(:xls, "xls", false),
+          export(:pdf, "pdf", false)
+        ]
+      end
+
+      def detail_exports
+        [
+          export(:detail_csv, "csv", true),
+          export(:detail_xls, "xls", true)
+        ]
       end
 
       def timesheet_href
@@ -88,6 +103,12 @@ module Worklogs
       end
 
       private
+
+      def export(key, format, detail)
+        Export.new(label: I18n.t("worklogs.reports.exports.#{key}"),
+                   caption: I18n.t("worklogs.reports.exports.#{key}_caption"),
+                   href: worklogs_report_export_path(query, format, detail))
+      end
 
       # The lists people actually pick from: who and what has time in this
       # period, not every record in the instance. A picker full of names with

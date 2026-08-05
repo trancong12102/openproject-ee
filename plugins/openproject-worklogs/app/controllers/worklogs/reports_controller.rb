@@ -25,7 +25,15 @@ module Worklogs
 
       respond_to do |format|
         format.html
-        format.csv { send_data(Reports::CsvExport.new(result: @result).to_csv, csv_options) }
+        format.csv { send_data(Reports::CsvExport.new(result: @result, detail:).to_csv, **export_options("csv", "text/csv; charset=utf-8")) }
+        format.xls do
+          send_data(Reports::XlsExport.new(result: @result, detail:, title: export_title).to_xls,
+                    **export_options("xls", "application/vnd.ms-excel"))
+        end
+        format.pdf do
+          send_data(Reports::PDFExport.new(result: @result, title: export_title).to_pdf,
+                    **export_options("pdf", "application/pdf"))
+        end
       end
     end
 
@@ -85,12 +93,31 @@ module Worklogs
       parts.any? ? parts.join(" · ") : @query.period_label
     end
 
-    def csv_options
+    # One row per time entry rather than one row per group. The pivot answers
+    # "how much"; this answers "which entries", which is what anybody billing
+    # or reconciling a month has to hand to somebody else.
+    def detail
+      ActiveModel::Type::Boolean.new.cast(params[:detail]).present?
+    end
+
+    def export_title
+      @saved_report&.name.presence || I18n.t("worklogs.reports.title")
+    end
+
+    def export_options(extension, type)
       {
-        type: "text/csv; charset=utf-8; header=present",
-        filename: "worklogs-#{@query.from.iso8601}-#{@query.to.iso8601}.csv",
+        type:,
+        filename: "#{export_filename}.#{extension}",
         disposition: "attachment"
       }
+    end
+
+    # Named after what it contains, not after when it was downloaded: three of
+    # these in a downloads folder should be tellable apart.
+    def export_filename
+      slug = export_title.parameterize.presence || "worklogs"
+
+      "#{slug}-#{@query.from.iso8601}-#{@query.to.iso8601}"
     end
   end
 end
