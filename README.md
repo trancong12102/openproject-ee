@@ -105,6 +105,17 @@ every upgrade:
    `ALL_FEATURES` in the initializer.
 3. Re-check the method signatures in `app/models/enterprise_token.rb`.
 4. Rebuild and re-run the verify step above.
+5. Re-verify the Worklogs plugin, which hooks into far more of core than the
+   gate override does and breaks in more ways:
+
+   ```bash
+   docker compose exec web bin/rails runner \
+     plugins/openproject-worklogs/script/verify.rb
+   plugins/openproject-worklogs/script/smoke.sh http://localhost:8080 admin '<password>'
+   ```
+
+   Both must end with every check passing. `plugins/openproject-worklogs/README.md`
+   lists what each failure usually means.
 
 ## Files
 
@@ -113,5 +124,6 @@ openproject-ee/
 ├── Dockerfile                                  # FROM slim + COPY the patch
 ├── docker-compose.yml                          # db + seeder + web (web on :8080)
 ├── .env.example                                # SECRET_KEY_BASE, POSTGRES_PASSWORD, host
-└── config/initializers/zzz_force_enterprise.rb # the runtime gate override
+├── config/initializers/zzz_force_enterprise.rb # the runtime gate override
+└── plugins/openproject-worklogs/               # the timesheet plugin (own README)
 ```

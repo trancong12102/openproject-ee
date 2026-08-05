@@ -740,7 +740,9 @@
   border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
   border-radius: var(--borderRadius-medium, 6px);
   background: var(--overlay-bgColor, var(--bgColor-default));
-  box-shadow: var(--shadow-floating-small, 0 8px 24px rgba(0, 0, 0, 0.15));
+  /* Token only, no literal fallback: a hard-coded black shadow is the one
+     colour that does not follow the theme. */
+  box-shadow: var(--shadow-floating-small);
 }
 
 .worklogs-drop--panel.-wide {

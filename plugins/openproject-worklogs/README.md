@@ -154,6 +154,61 @@ deployment. `Cron::WorklogsReminderJob` checks the setting itself and does nothi
 the other 167 times, so an administrator can move the reminder to Friday afternoon
 without a restart.
 
+## Checking it still works
+
+This plugin hooks into an application it does not ship with — core's time entry
+contracts, its permission registry, its menus, its Primer components, its cron
+table. All of those can move in a minor OpenProject release without anything
+saying so, so there are two checks, and both are meant to be run **after every
+version bump**, before the image goes anywhere.
+
+**From the inside**, against the running application:
+
+```bash
+docker compose exec web bin/rails runner \
+  plugins/openproject-worklogs/script/verify.rb
+```
+
+48 checks: that every constant still resolves, that the three permissions and
+both menus registered, that every routed action is covered by a permission, that
+core's `TimeEntries` contracts still call our lock validation on update, delete
+and both directions of a move, that settings round-trip and cast, that the
+reminder job is on the cron table hourly, and that en and vi agree key for key.
+It writes inside a transaction and rolls back, so it is safe against real data.
+
+**From the outside**, over HTTP:
+
+```bash
+plugins/openproject-worklogs/script/smoke.sh http://localhost:8080 admin '<password>'
+```
+
+16 checks: every page renders, all four export formats download, the
+fingerprinted asset is served and a stale digest is refused, the homescreen block
+is there, and the timesheet is not public.
+
+### What each failure usually means
+
+| Failing check | Look at |
+| --- | --- |
+| a constant does not eager-load | a file under `lib/` whose name and constant have drifted apart — this takes the *whole application* down at boot, not just the plugin |
+| a permission or menu is missing | `Redmine::Plugin.register` in `engine.rb`; core may have renamed a menu or changed `permissible_on` |
+| a routed action is not covered | a new action added to a controller without adding it to the permission's map — it is reachable by anyone logged in |
+| core's contract no longer refuses | `TimeEntries::BaseContract` / `DeleteContract` were renamed or restructured; see `lib/open_project/worklogs/patches/` |
+| a page 500s in the smoke run | most often a Primer component whose slot names changed |
+| the stylesheet has a colour literal | dark mode is broken wherever it was added; use a Primer token |
+
+### RSpec
+
+`spec/` holds unit, service and request specs in OpenProject's own idiom. They
+need an **OpenProject source checkout** with the dev bundle — the runtime image
+has neither RSpec nor a writable bundle, so they cannot run there, which is why
+`script/verify.rb` exists and covers the same ground where the plugin ships.
+
+```bash
+# from an OpenProject source checkout with this plugin in plugins/
+bundle exec rspec plugins/openproject-worklogs/spec
+```
+
 ## What it does not add
 
 No new way to see or change time. `view_worklogs` is a global entry ticket; every

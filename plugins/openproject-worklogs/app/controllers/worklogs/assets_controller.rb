@@ -9,7 +9,14 @@ module Worklogs
       file = OpenProject::Worklogs::Assets.file_path(params[:filename])
       return head(:not_found) if file.nil?
 
-      # The URL carries a content digest, so a hit can never be stale.
+      # The digest has to be checked, not merely carried. Answering an old digest
+      # with the current file — under a header that promises the answer will
+      # never change — is how a proxy ends up holding today's CSS against
+      # yesterday's URL for a year. A miss is a 404, and the page that asked has
+      # already been re-rendered with the new digest.
+      return head(:not_found) unless params[:digest] == OpenProject::Worklogs::Assets
+                                                        .digest(params[:filename])
+
       expires_in 1.year, public: true
       response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
 
