@@ -1,0 +1,43 @@
+vi:
+  worklogs:
+    label_worklogs: "Worklogs"
+    capacity:
+      non_working_day: "Ngày nghỉ"
+      absence: "Vắng mặt"
+    timesheet:
+      week_number: "Tuần %{number}"
+      of_capacity: "trên %{capacity}h"
+      work_package_column: "Công việc"
+      total_column: "Tổng"
+      daily_total: "Đã log"
+      capacity: "Định mức"
+      cell_label: "Số giờ cho %{subject}, %{date}"
+      split_cell_hint: "Ngày này có nhiều bản ghi — mở ngày để chỉnh sửa"
+      blank_heading: "Tuần này chưa log giờ nào"
+      blank_description: "Thêm một công việc để bắt đầu điền tuần của bạn."
+      save_failed: "Không lưu được bản ghi này"
+      add_row: "Thêm dòng"
+      add_row_submit: "Thêm vào tuần này"
+      activity_any: "Mọi hoạt động"
+      activity_caption: "Ghim một hoạt động để nó nằm riêng một dòng. Để trống để dùng mặc định của dự án."
+      more_actions: "Thao tác khác"
+      copy_previous_week: "Chép tuần trước"
+      copy_previous_week_description: "Mang các công việc của tuần trước sang, không kèm số giờ."
+      remove_row_label: "Bỏ %{subject} khỏi tuần này"
+      log_on: "Log giờ cho %{subject}, %{date}"
+      open_entry: "Mở bản ghi của %{subject}, %{date}"
+  activerecord:
+    models:
+      worklogs/row_pin: "Dòng bảng chấm công"
+    attributes:
+      worklogs/row_pin:
+        entity: "Công việc"
+        entity_id: "Công việc"
+        activity_id: "Hoạt động"
+    errors:
+      models:
+        worklogs/row_pin:
+          attributes:
+            entity_id:
+              taken: "đã có trên bảng chấm công tuần này."
+  permission_view_worklogs: "Xem worklogs"

@@ -1,0 +1,19 @@
+<%= render(Primer::Alpha::Dialog.new(title: dialog_title, size: :large, id: DIALOG_ID)) do |dialog| %>
+  <% dialog.with_header(variant: :large) %>
+  <% dialog.with_body(classes: "Overlay-body_autocomplete_height") do %>
+    <%= render(Worklogs::Timesheets::AddRowFormComponent.new(row_pin:, week:, user:)) %>
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= component_collection do |buttons| %>
+      <% buttons.with_component(Primer::Beta::Button.new(data: { "close-dialog-id": DIALOG_ID })) do %>
+        <%= t("button_cancel") %>
+      <% end %>
+      <% buttons.with_component(Primer::Beta::Button.new(scheme: :primary,
+                                                        form: Worklogs::Timesheets::AddRowFormComponent::FORM_ID,
+                                                        data: { turbo: true },
+                                                        type: :submit)) do %>
+        <%= t("worklogs.timesheet.add_row_submit") %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

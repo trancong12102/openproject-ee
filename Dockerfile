@@ -15,3 +15,8 @@ FROM openproject/openproject:17.6-rc-slim
 # sorts it last; the patch itself defers via to_prepare so load order is moot.
 COPY --chown=app:app config/initializers/zzz_force_enterprise.rb \
      /app/config/initializers/zzz_force_enterprise.rb
+
+# First-party plugins (Rails engines) plus the loader that pulls them in without
+# bundler — see the header of config/additional_environment.rb for why.
+COPY --chown=app:app plugins/ /app/plugins/
+COPY --chown=app:app config/additional_environment.rb /app/config/additional_environment.rb

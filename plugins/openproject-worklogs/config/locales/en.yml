@@ -1,0 +1,43 @@
+en:
+  worklogs:
+    label_worklogs: "Worklogs"
+    capacity:
+      non_working_day: "Non-working day"
+      absence: "Absence"
+    timesheet:
+      week_number: "Week %{number}"
+      of_capacity: "of %{capacity}h"
+      work_package_column: "Work package"
+      total_column: "Total"
+      daily_total: "Logged"
+      capacity: "Capacity"
+      cell_label: "Hours on %{subject}, %{date}"
+      split_cell_hint: "Several entries on this day — open the day to edit them"
+      blank_heading: "Nothing logged this week"
+      blank_description: "Add a work package to start filling in your week."
+      save_failed: "Could not save this entry"
+      add_row: "Add row"
+      add_row_submit: "Add to this week"
+      activity_any: "Any activity"
+      activity_caption: "Pin an activity to keep it on its own row. Leave empty to use the project default."
+      more_actions: "More actions"
+      copy_previous_week: "Copy last week"
+      copy_previous_week_description: "Brings last week's work packages over, without their hours."
+      remove_row_label: "Remove %{subject} from this week"
+      log_on: "Log time on %{subject}, %{date}"
+      open_entry: "Open entry for %{subject}, %{date}"
+  activerecord:
+    models:
+      worklogs/row_pin: "Timesheet row"
+    attributes:
+      worklogs/row_pin:
+        entity: "Work package"
+        entity_id: "Work package"
+        activity_id: "Activity"
+    errors:
+      models:
+        worklogs/row_pin:
+          attributes:
+            entity_id:
+              taken: "is already on this week's timesheet."
+  permission_view_worklogs: "View worklogs"

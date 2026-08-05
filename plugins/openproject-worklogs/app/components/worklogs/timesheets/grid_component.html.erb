@@ -1,0 +1,167 @@
+<%= component_wrapper do %>
+  <div class="worklogs-grid"
+       data-worklogs-grid
+       data-update-url="<%= worklogs_cells_path %>"
+       data-grid-url="<%= grid_url %>"
+       data-entry-dialog-template="<%= entry_dialog_template %>"
+       data-week="<%= week.to_param %>"
+       data-user-id="<%= user.id %>">
+
+    <div class="worklogs-grid--summary">
+      <div class="worklogs-grid--summary-figures">
+        <span class="worklogs-grid--summary-total" data-worklogs-week-total><%= worklogs_hours_figure(timesheet.total) %></span>
+        <span class="worklogs-grid--summary-capacity">
+          <%= t("worklogs.timesheet.of_capacity", capacity: worklogs_hours(capacity.total)) %>
+        </span>
+      </div>
+      <div class="worklogs-grid--summary-bar" role="presentation">
+        <div class="worklogs-grid--summary-bar-fill"
+             data-worklogs-progress
+             style="width: <%= capacity.total.zero? ? 0 : [(timesheet.total / capacity.total * 100).round, 100].min %>%"></div>
+      </div>
+    </div>
+
+    <% if any_rows? %>
+      <div class="worklogs-grid--scroller">
+        <table class="worklogs-grid--table">
+          <thead>
+            <tr>
+              <th scope="col" class="worklogs-grid--row-head"><%= t("worklogs.timesheet.work_package_column") %></th>
+              <% dates.each do |date| %>
+                <th scope="col" class="<%= column_classes(date).join(' ') %>"
+                    <%= "title=#{non_working_reason(date).label.inspect}".html_safe if non_working_reason(date) %>>
+                  <span class="worklogs-grid--day-name"><%= worklogs_day_name(date) %></span>
+                  <span class="worklogs-grid--day-number"><%= date.day %></span>
+                </th>
+              <% end %>
+              <th scope="col" class="worklogs-grid--total-head"><%= t("worklogs.timesheet.total_column") %></th>
+            </tr>
+          </thead>
+
+          <% groups.each do |group| %>
+            <tbody class="worklogs-grid--group">
+              <tr class="worklogs-grid--group-row">
+                <th scope="colgroup" colspan="<%= dates.size + 2 %>">
+                  <%= link_to group.project.name, project_path(group.project), class: "worklogs-grid--group-name" %>
+                  <span class="worklogs-grid--group-total"><%= worklogs_hours_with_unit(group.total) %></span>
+                </th>
+              </tr>
+
+              <% group.rows.each do |row| %>
+                <tr class="worklogs-grid--row" id="worklogs-row-<%= row.key %>" data-worklogs-row="<%= row.key %>">
+                  <th scope="row" class="worklogs-grid--row-head">
+                    <div class="worklogs-grid--row-main">
+                      <div class="worklogs-grid--row-text">
+                        <div class="worklogs-grid--row-title">
+                          <% if entity_path(row) %>
+                            <%= link_to row.reference, entity_path(row), class: "worklogs-grid--row-reference" %>
+                          <% end %>
+                          <span class="worklogs-grid--row-subject" title="<%= row.subject %>"><%= row.subject %></span>
+                        </div>
+                        <% if row.activity %>
+                          <%= render(Primer::Beta::Label.new(scheme: :secondary, size: :medium)) { row.activity.name } %>
+                        <% end %>
+                      </div>
+
+                      <%# A Primer ActionMenu here would cost ~7.6 KB of markup per
+                          row, which a 40-row week cannot afford — and it would
+                          only repeat what is already one click away: the work
+                          package is linked in the title and every cell has its
+                          own detail button. All that is left is dropping an
+                          empty row, and a row with hours is dropped by clearing
+                          its cells, so no destructive action hides behind this. %>
+                      <%# Rendered even on rows that currently have hours, hidden by
+                          class, so clearing the last cell reveals it without a
+                          round trip. %>
+                      <%= link_to "",
+                                  remove_row_path(row),
+                                  class: "worklogs-grid--row-remove #{'-hidden' unless removable?(row)}",
+                                  title: remove_row_label(row),
+                                  "aria-label": remove_row_label(row),
+                                  data: { turbo: true, "turbo-method": :delete } %>
+                    </div>
+                  </th>
+
+                  <% dates.each do |date| %>
+                    <% cell = row.cell(date) %>
+                    <td class="<%= cell_classes(row, cell).join(' ') %>">
+                      <% if editable?(row, cell) %>
+                        <input type="text"
+                               class="worklogs-grid--cell-input"
+                               inputmode="decimal"
+                               autocomplete="off"
+                               value="<%= worklogs_hours(cell.hours) %>"
+                               aria-label="<%= t('worklogs.timesheet.cell_label', subject: row.subject, date: I18n.l(date, format: :long)) %>"
+                               <%= tag.attributes(data: cell_data(row, cell)) %>>
+                      <% else %>
+                        <span class="worklogs-grid--cell-static" title="<%= cell_title(cell) %>">
+                          <%= worklogs_hours(cell.hours) %>
+                        </span>
+                      <% end %>
+
+                      <% if show_cell_dialog?(row, cell) %>
+                        <%# Deliberately icon-free markup: at 7 cells × N rows an
+                            inline <svg> per cell dominates the page weight, so the
+                            plus/pencil glyphs are CSS masks the browser can also
+                            swap when a cell gains or loses its entry. %>
+                        <%= link_to "",
+                                    cell_dialog_path(row, cell),
+                                    class: "worklogs-grid--cell-detail #{'-empty' if cell.empty?}",
+                                    tabindex: -1,
+                                    title: cell_dialog_label(row, cell),
+                                    "aria-label": cell_dialog_label(row, cell),
+                                    data: {
+                                      "turbo-stream": true,
+                                      new_href: new_entry_dialog_path(row, cell),
+                                      add_label: t("worklogs.timesheet.log_on", subject: row.subject,
+                                                                                date: I18n.l(cell.date, format: :long)),
+                                      edit_label: t("worklogs.timesheet.open_entry", subject: row.subject,
+                                                                                     date: I18n.l(cell.date, format: :long))
+                                    } %>
+                      <% end %>
+                    </td>
+                  <% end %>
+
+                  <td class="worklogs-grid--row-total" data-worklogs-row-total="<%= row.key %>">
+                    <%= worklogs_hours(row.total) %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          <% end %>
+
+          <tfoot>
+            <tr class="worklogs-grid--totals">
+              <th scope="row"><%= t("worklogs.timesheet.daily_total") %></th>
+              <% dates.each do |date| %>
+                <td class="<%= daily_total_classes(date).join(' ') %>" data-worklogs-day-total="<%= date.iso8601 %>">
+                  <%= worklogs_hours(timesheet.daily_total(date)) %>
+                </td>
+              <% end %>
+              <td class="worklogs-grid--grand-total" data-worklogs-grand-total>
+                <%= worklogs_hours_figure(timesheet.total) %>
+              </td>
+            </tr>
+            <tr class="worklogs-grid--capacity">
+              <th scope="row"><%= t("worklogs.timesheet.capacity") %></th>
+              <% dates.each do |date| %>
+                <td class="<%= (column_classes(date) - ['worklogs-grid--day']).unshift('worklogs-grid--footer-cell').join(' ') %>">
+                  <%= worklogs_hours(capacity.hours_for(date)) %>
+                </td>
+              <% end %>
+              <td class="worklogs-grid--grand-total"><%= worklogs_hours(capacity.total) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% else %>
+      <%= render(Primer::Beta::Blankslate.new(border: false)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: "clock") %>
+        <% blankslate.with_heading(tag: :h3).with_content(t("worklogs.timesheet.blank_heading")) %>
+        <% blankslate.with_description { t("worklogs.timesheet.blank_description") } %>
+        <% blankslate.with_primary_action(href: new_worklogs_row_path(date: week.to_param, user_id: user.id),
+                                          data: { "turbo-stream": true }).with_content(t("worklogs.timesheet.add_row")) %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

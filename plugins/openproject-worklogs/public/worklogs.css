@@ -1,0 +1,463 @@
+/*
+ * Worklogs timesheet grid.
+ *
+ * Everything is expressed in Primer primitives (--bgColor-*, --fgColor-*,
+ * --borderColor-*, --base-size-*) so the grid inherits OpenProject's light and
+ * dark themes and any custom design colours without a second definition.
+ */
+
+.worklogs-grid {
+  --worklogs-icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2'/%3E%3C/svg%3E");
+  --worklogs-icon-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.75.75 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.75.75 0 0 1-.734-.215L8 9.06l-3.22 3.22a.75.75 0 0 1-1.042-.018.75.75 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06'/%3E%3C/svg%3E");
+  --worklogs-icon-pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758Zm.176 4.823L9.75 4.81l-6.286 6.287a.25.25 0 0 0-.064.108l-.558 1.953 1.953-.558a.25.25 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z'/%3E%3C/svg%3E");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap-condensed, 8px);
+  padding: 0 var(--base-size-16, 16px) var(--base-size-24, 24px);
+}
+
+/* ---------------------------------------------------------------- summary */
+
+.worklogs-grid--summary {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-16, 16px);
+  padding: var(--base-size-8, 8px) 0;
+}
+
+.worklogs-grid--summary-figures {
+  display: flex;
+  align-items: baseline;
+  gap: var(--base-size-4, 4px);
+  white-space: nowrap;
+}
+
+.worklogs-grid--summary-total {
+  font-size: var(--text-title-size-medium, 20px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  font-variant-numeric: tabular-nums;
+}
+
+.worklogs-grid--summary-total::after {
+  content: "h";
+  font-size: var(--text-body-size-medium, 14px);
+  font-weight: var(--base-text-weight-normal, 400);
+  color: var(--fgColor-muted);
+}
+
+.worklogs-grid--summary-capacity {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-medium, 14px);
+}
+
+.worklogs-grid--summary-bar {
+  flex: 1;
+  max-width: 320px;
+  height: var(--base-size-8, 8px);
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--bgColor-neutral-muted);
+  overflow: hidden;
+}
+
+.worklogs-grid--summary-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bgColor-accent-emphasis);
+  transition: width 160ms ease-out;
+}
+
+/* ------------------------------------------------------------------ table */
+
+.worklogs-grid--scroller {
+  overflow-x: auto;
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+}
+
+.worklogs-grid--table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-body-size-medium, 14px);
+}
+
+.worklogs-grid--table th,
+.worklogs-grid--table td {
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+  padding: 0;
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.worklogs-grid--table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bgColor-muted);
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-align: center;
+  padding: var(--base-size-8, 8px) var(--base-size-4, 4px);
+}
+
+.worklogs-grid--day {
+  width: 76px;
+  min-width: 76px;
+}
+
+.worklogs-grid--day-name {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-grid--day-number {
+  display: block;
+  color: var(--fgColor-default);
+  font-size: var(--text-body-size-medium, 14px);
+}
+
+.worklogs-grid--table thead th.-today {
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+}
+
+.worklogs-grid--table thead th.-today .worklogs-grid--day-number {
+  color: var(--fgColor-accent);
+}
+
+.worklogs-grid--table thead th.-non-working .worklogs-grid--day-number {
+  color: var(--fgColor-muted);
+  font-weight: var(--base-text-weight-normal, 400);
+}
+
+/* Row header (sticky first column) ---------------------------------------- */
+
+.worklogs-grid--row-head {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 280px;
+  max-width: 420px;
+  background: var(--bgColor-default);
+  text-align: left;
+  font-weight: var(--base-text-weight-normal, 400);
+  padding: var(--base-size-6, 6px) var(--base-size-12, 12px);
+  border-right: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+}
+
+.worklogs-grid--table thead .worklogs-grid--row-head {
+  z-index: 4;
+  background: var(--bgColor-muted);
+  text-align: left;
+}
+
+.worklogs-grid--row-main {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-8, 8px);
+  min-width: 0;
+}
+
+.worklogs-grid--row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The remove button only appears once the row is pointed at or keyboard-focused,
+   so a 40-row week does not read as 40 competing buttons. */
+.worklogs-grid--row-remove {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-24, 24px);
+  height: var(--base-size-24, 24px);
+  border-radius: var(--borderRadius-medium, 6px);
+  color: var(--fgColor-muted);
+  opacity: 0;
+  transition: opacity 80ms ease-in;
+}
+
+.worklogs-grid--row-remove::before {
+  content: "";
+  width: var(--base-size-16, 16px);
+  height: var(--base-size-16, 16px);
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-image: var(--worklogs-icon-x);
+  mask-image: var(--worklogs-icon-x);
+}
+
+.worklogs-grid--row:hover .worklogs-grid--row-remove,
+.worklogs-grid--row-remove:focus {
+  opacity: 1;
+}
+
+.worklogs-grid--row-remove:hover {
+  color: var(--fgColor-danger);
+  background: var(--bgColor-danger-muted);
+}
+
+.worklogs-grid--row-remove.-hidden {
+  display: none;
+}
+
+.worklogs-grid--row-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--base-size-6, 6px);
+  min-width: 0;
+}
+
+.worklogs-grid--row-reference {
+  color: var(--fgColor-muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.worklogs-grid--row-subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Group rows -------------------------------------------------------------- */
+
+.worklogs-grid--group-row th {
+  position: sticky;
+  left: 0;
+  background: var(--bgColor-inset, var(--bgColor-muted));
+  padding: var(--base-size-6, 6px) var(--base-size-12, 12px);
+  text-align: left;
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  color: var(--fgColor-muted);
+}
+
+.worklogs-grid--group-name {
+  color: inherit;
+}
+
+.worklogs-grid--group-total {
+  float: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cells ------------------------------------------------------------------- */
+
+.worklogs-grid--cell {
+  position: relative;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Escape hatch to core's time entry dialog for everything the bare number
+   cannot carry: comment, activity, start and end time. */
+.worklogs-grid--cell-detail {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-16, 16px);
+  height: var(--base-size-16, 16px);
+  border-radius: var(--borderRadius-small, 4px);
+  color: var(--fgColor-muted);
+  background: var(--bgColor-default);
+  opacity: 0;
+  transition: opacity 80ms ease-in;
+}
+
+.worklogs-grid--cell:hover .worklogs-grid--cell-detail,
+.worklogs-grid--cell-detail:focus {
+  opacity: 1;
+}
+
+.worklogs-grid--cell-detail:hover {
+  color: var(--fgColor-accent);
+  background: var(--bgColor-accent-muted);
+}
+
+/* Octicon "pencil" and "plus", drawn as masks so the glyph costs nothing per
+   cell and follows currentColor like a real icon. Paths copied verbatim from
+   the openproject-octicons build the app already ships. */
+.worklogs-grid--cell-detail::before {
+  content: "";
+  width: var(--base-size-12, 12px);
+  height: var(--base-size-12, 12px);
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-image: var(--worklogs-icon-pencil);
+  mask-image: var(--worklogs-icon-pencil);
+}
+
+.worklogs-grid--cell-detail.-empty::before {
+  -webkit-mask-image: var(--worklogs-icon-plus);
+  mask-image: var(--worklogs-icon-plus);
+}
+
+.worklogs-grid--cell.-today {
+  background: var(--bgColor-accent-muted);
+}
+
+.worklogs-grid--cell.-non-working {
+  background: var(--bgColor-neutral-muted);
+}
+
+.worklogs-grid--cell-input {
+  width: 100%;
+  height: 36px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: center;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+  outline-offset: -2px;
+}
+
+.worklogs-grid--cell-input:hover {
+  background: var(--bgColor-neutral-muted);
+}
+
+.worklogs-grid--cell-input:focus {
+  background: var(--bgColor-default);
+  outline: 2px solid var(--borderColor-accent-emphasis, var(--fgColor-accent));
+}
+
+.worklogs-grid--cell-input::placeholder {
+  color: var(--fgColor-muted);
+}
+
+.worklogs-grid--cell-static {
+  display: block;
+  height: 36px;
+  line-height: 36px;
+  color: var(--fgColor-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.worklogs-grid--cell.-split .worklogs-grid--cell-static::after {
+  content: "•";
+  margin-left: var(--base-size-4, 4px);
+  color: var(--fgColor-accent);
+}
+
+/* Save feedback ----------------------------------------------------------- */
+
+.worklogs-grid--cell.-saving .worklogs-grid--cell-input {
+  opacity: 0.6;
+}
+
+.worklogs-grid--cell.-saved .worklogs-grid--cell-input {
+  animation: worklogs-flash 700ms ease-out;
+}
+
+.worklogs-grid--cell.-error .worklogs-grid--cell-input {
+  outline: 2px solid var(--borderColor-danger-emphasis, var(--fgColor-danger));
+  background: var(--bgColor-danger-muted);
+}
+
+@keyframes worklogs-flash {
+  from { background: var(--bgColor-success-muted); }
+  to { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .worklogs-grid--cell.-saved .worklogs-grid--cell-input { animation: none; }
+  .worklogs-grid--summary-bar-fill { transition: none; }
+  .worklogs-grid--cell-detail,
+  .worklogs-grid--row-actions { transition: none; }
+}
+
+/* Touch and keyboard-only users never get a hover, so reveal both affordances
+   permanently rather than hiding functionality behind a pointer. */
+@media (hover: none) {
+  .worklogs-grid--cell-detail,
+  .worklogs-grid--row-actions { opacity: 1; }
+}
+
+/* Totals ------------------------------------------------------------------ */
+
+.worklogs-grid--row-total,
+.worklogs-grid--grand-total,
+.worklogs-grid--total-head {
+  width: 84px;
+  min-width: 84px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--base-text-weight-semibold, 600);
+  border-left: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+}
+
+.worklogs-grid--table tfoot th,
+.worklogs-grid--table tfoot td {
+  position: sticky;
+  bottom: 0;
+  background: var(--bgColor-muted);
+  padding: var(--base-size-8, 8px) var(--base-size-4, 4px);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  border-top: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-bottom: none;
+}
+
+.worklogs-grid--table tfoot th {
+  left: 0;
+  z-index: 3;
+  text-align: left;
+  padding-left: var(--base-size-12, 12px);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-grid--totals td {
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-grid--totals td.-over {
+  color: var(--fgColor-danger);
+}
+
+.worklogs-grid--totals td.-under {
+  color: var(--fgColor-attention);
+}
+
+.worklogs-grid--capacity td,
+.worklogs-grid--capacity th {
+  color: var(--fgColor-muted);
+  font-weight: var(--base-text-weight-normal, 400);
+  border-top: none;
+}
+
+/* Add-row dialog --------------------------------------------------------- */
+
+.worklogs-add-row--activity {
+  margin-top: var(--base-size-16, 16px);
+}
+
+/* Refreshing state ------------------------------------------------------- */
+
+/* The grid is still readable while it re-fetches; only interaction is held
+   back, so a slow refresh never looks like a blank page. */
+.worklogs-grid.-refreshing {
+  opacity: 0.6;
+  pointer-events: none;
+}

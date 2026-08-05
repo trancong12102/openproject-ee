@@ -1,0 +1,48 @@
+<%= component_wrapper do %>
+  <%
+    # The inline form block is instance_eval'd on the form object, so nothing
+    # from this component is reachable inside it — hand everything over as locals.
+    url = autocompleter_url
+    dialog_id = Worklogs::Timesheets::AddRowDialogComponent::DIALOG_ID
+    activity_options = activities.map { |activity| [activity.name, activity.id] }
+    activity_label = I18n.t(:label_activity)
+    activity_blank = I18n.t("worklogs.timesheet.activity_any")
+    activity_caption = I18n.t("worklogs.timesheet.activity_caption")
+    work_package_label = WorkPackage.model_name.human
+  %>
+
+  <%= primer_form_with(id: FORM_ID, model: row_pin, **submit_url_options, data: { turbo: true }) do |f| %>
+    <% if base_errors.any? %>
+      <%= render(Primer::Alpha::Banner.new(mb: 3, icon: :stop, scheme: :danger)) { base_errors.join("\n") } %>
+    <% end %>
+
+    <%= render_inline_form(f) do |my_form|
+          my_form.work_package_autocompleter(
+            name: :entity_id,
+            label: work_package_label,
+            required: true,
+            visually_hide_label: false,
+            autocomplete_options: {
+              resource: "work_packages",
+              searchKey: "typeahead",
+              url:,
+              openDirectly: false,
+              focusDirectly: true,
+              dropdownPosition: "bottom",
+              appendTo: "##{dialog_id}"
+            }
+          )
+        end %>
+
+    <div class="worklogs-add-row--activity">
+      <%= render_inline_form(f) do |my_form|
+            my_form.select_list(name: :activity_id,
+                                label: activity_label,
+                                include_blank: activity_blank,
+                                caption: activity_caption) do |list|
+              activity_options.each { |name, id| list.option(label: name, value: id) }
+            end
+          end %>
+    </div>
+  <% end %>
+<% end %>
