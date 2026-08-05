@@ -4,6 +4,8 @@ module Worklogs
   # TimeEntries services so contracts, journals, costs and notifications behave
   # exactly as they do in the rest of OpenProject.
   class CellsController < ApplicationController
+    include Worklogs::TimesheetHelper
+
     before_action :require_login
     authorize_with_global_permission :view_worklogs
 
@@ -73,6 +75,9 @@ module Worklogs
       capacity_total = timesheet.capacity.total
 
       {
+        stats: stats_payload(timesheet),
+        day_difference: day_difference(timesheet, date),
+        week_difference: week_difference_payload(timesheet),
         # A destroyed entry must not leave its id behind on the client, or the
         # next keystroke in that cell would try to update a deleted record.
         entry_id: (entry.id if entry.is_a?(TimeEntry) && !entry.destroyed?),
@@ -88,6 +93,45 @@ module Worklogs
         capacity_total:,
         progress: capacity_total.zero? ? 0 : [(timesheet.total / capacity_total * 100).round, 100].min
       }
+    end
+
+    # The stats strip lives outside the grid, so a saved cell has to carry its
+    # own refreshed figures — the alternative is a second round trip per
+    # keystroke just to re-render four numbers.
+    def stats_payload(timesheet)
+      stats = Timesheets::StatsComponent.new(timesheet:)
+
+      {
+        logged: worklogs_duration(stats.logged),
+        progress: stats.progress,
+        expected_marker: stats.expected_marker,
+        difference_label: stats.difference_label,
+        difference_scheme: stats.difference_scheme,
+        complete_days: stats.complete_days,
+        missing_label: stats.missing_label,
+        missing_scheme: stats.missing_scheme
+      }
+    end
+
+    # Mirrors GridComponent#day_difference_label / #week_difference_label; the
+    # footer row has to move with the cell that was just saved.
+    def day_difference(timesheet, on)
+      target = timesheet.capacity.hours_for(on)
+      return { label: "", state: "-none" } if target.zero?
+
+      signed_difference(timesheet.daily_total(on) - target)
+    end
+
+    def week_difference_payload(timesheet)
+      signed_difference(timesheet.total - timesheet.capacity.total)
+    end
+
+    def signed_difference(value)
+      value = value.round(2)
+      return { label: "0", state: "-met" } if value.zero?
+
+      { label: "#{value.negative? ? '−' : '+'}#{worklogs_hours(value.abs)}",
+        state: value.negative? ? "-under" : "-over" }
     end
 
     def row_activity(entry)

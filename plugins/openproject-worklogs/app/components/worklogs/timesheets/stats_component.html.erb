@@ -1,0 +1,40 @@
+<%= component_wrapper do %>
+  <div class="worklogs-stats" data-worklogs-stats>
+    <div class="worklogs-stats--tile -primary">
+      <span class="worklogs-stats--label"><%= t("worklogs.stats.logged") %></span>
+      <span class="worklogs-stats--value" data-worklogs-week-total><%= worklogs_duration(logged) %></span>
+      <span class="worklogs-stats--caption">
+        <%= t("worklogs.stats.of_capacity", capacity: worklogs_duration(capacity.total)) %>
+      </span>
+
+      <div class="worklogs-stats--bar" role="presentation">
+        <div class="worklogs-stats--bar-fill" data-worklogs-progress style="width: <%= progress %>%"></div>
+        <%# Where the week should stand today, so the bar answers "am I behind". %>
+        <span class="worklogs-stats--bar-marker <%= '-hidden' unless expected_marker %>"
+              data-worklogs-expected-marker
+              style="left: <%= expected_marker || 0 %>%"
+              title="<%= t('worklogs.stats.expected_marker', hours: worklogs_duration(expected)) %>"></span>
+      </div>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.stats.difference") %></span>
+      <span class="worklogs-stats--value -<%= difference_scheme %>" data-worklogs-difference><%= difference_label %></span>
+      <span class="worklogs-stats--caption">
+        <%= t("worklogs.stats.expected_by_now", hours: worklogs_duration(expected)) %>
+      </span>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.stats.days_complete") %></span>
+      <span class="worklogs-stats--value"><span data-worklogs-complete-days><%= complete_days %></span><span class="worklogs-stats--of"><%= " / #{working_days_count}" %></span></span>
+      <span class="worklogs-stats--caption"><%= t("worklogs.stats.days_complete_caption") %></span>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.stats.missing") %></span>
+      <span class="worklogs-stats--value -<%= missing_scheme %> -small" data-worklogs-missing><%= missing_label %></span>
+      <span class="worklogs-stats--caption"><%= t("worklogs.stats.missing_caption") %></span>
+    </div>
+  </div>
+<% end %>

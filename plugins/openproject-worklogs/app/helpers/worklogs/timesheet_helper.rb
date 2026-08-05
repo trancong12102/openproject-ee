@@ -19,6 +19,13 @@ module Worklogs
       worklogs_hours(value).presence || "0"
     end
 
+    # Headline figures use OpenProject's own duration wording ("30h 15m") so the
+    # page reads like the rest of the product. The grid itself stays decimal:
+    # its cells are inputs, and you should see the number you typed.
+    def worklogs_duration(value)
+      DurationConverter.output(value.to_f.round(2), format: :hours_and_minutes).presence || "0h"
+    end
+
     def worklogs_hours_with_unit(value)
       hours = worklogs_hours(value)
       hours.presence ? "#{hours}h" : "–"

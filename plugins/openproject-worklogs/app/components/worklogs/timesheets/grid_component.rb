@@ -76,7 +76,9 @@ module Worklogs
         logged = timesheet.daily_total(date)
         target = capacity.hours_for(date)
         classes << "-over" if target.positive? && logged > target
-        classes << "-under" if target.positive? && logged.positive? && logged < target
+        # Only days that have already happened can be short; colouring Friday
+        # red on a Wednesday would flag every week as a problem all week.
+        classes << "-under" if target.positive? && logged < target && date <= Time.zone.today
         classes
       end
 
@@ -146,6 +148,69 @@ module Worklogs
 
       def remove_row_label(row)
         I18n.t("worklogs.timesheet.remove_row_label", subject: row.subject)
+      end
+
+      def non_working_short(date)
+        reason = non_working_reason(date)
+        return nil if reason.nil?
+
+        case reason.kind
+        when :holiday then I18n.t("worklogs.capacity.holiday_short")
+        when :absence then I18n.t("worklogs.capacity.absence_short")
+        else I18n.t("worklogs.capacity.weekend_short")
+        end
+      end
+
+      # Signed gap between what was logged and what the day asked for. Days that
+      # want nothing — weekend, holiday, absence — have no gap to report.
+      #
+      # Days still ahead of today are included on purpose: read down a column it
+      # says "this day still wants 5h", which is a to-do rather than an
+      # accusation, and it makes the row add up to the week figure beside it.
+      # The stats strip above answers the other question, "am I behind *today*".
+      def day_difference(date)
+        target = capacity.hours_for(date)
+        return nil if target.zero?
+
+        (timesheet.daily_total(date) - target).round(2)
+      end
+
+      def day_difference_label(date)
+        difference = day_difference(date)
+        return "" if difference.nil?
+        return "0" if difference.zero?
+
+        "#{difference.negative? ? '−' : '+'}#{worklogs_hours(difference.abs)}"
+      end
+
+      def difference_classes(date)
+        classes = column_classes(date) - ["worklogs-grid--day"]
+        classes.unshift("worklogs-grid--footer-cell")
+
+        difference = day_difference(date)
+        classes << "-none" if difference.nil?
+        classes << "-under" if difference&.negative?
+        classes << "-over" if difference&.positive?
+        classes << "-met" if difference&.zero?
+        classes
+      end
+
+      # Deliberately the sum of the day cells to its left — the whole week's
+      # capacity, not just the part of it that has already happened.
+      def week_difference
+        (timesheet.total - capacity.total).round(2)
+      end
+
+      def week_difference_label
+        return "0" if week_difference.zero?
+
+        "#{week_difference.negative? ? '−' : '+'}#{worklogs_hours(week_difference.abs)}"
+      end
+
+      def week_difference_class
+        return "-met" if week_difference.zero?
+
+        week_difference.negative? ? "-under" : "-over"
       end
     end
   end

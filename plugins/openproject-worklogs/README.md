@@ -11,7 +11,14 @@ column per day, every cell editable in place.
   value is parsed, saved and the row, day and week totals recomputed server-side.
 - Arrow keys, `Enter` and `Esc` move through the week without touching the mouse.
 - Capacity per day from the user's working hours, with weekends, public holidays
-  and absences called out.
+  and absences called out — in the day headers, and again as a `vs. target` row
+  under the daily totals.
+- A stats strip above the grid: hours logged against the week's capacity, the
+  balance against what was due *by today*, how many working days met their
+  target, and which past working days are still empty.
+- Each row carries core's own type, id and status line, and a pinned activity
+  shows as a chip; cells holding a comment carry a marker that reads it back on
+  hover.
 - **Add row** pins a work package on the week before any time is logged, so you
   can lay the week out first and fill it in later. **Copy last week** brings the
   previous week's rows over without their hours.
@@ -58,6 +65,18 @@ parsing, keyboard movement and autosave on top.
   just edited.
 - Rows can only be removed from a week while they hold no hours. Deleting logged
   time stays an explicit act: clear the cell, or use the entry dialog.
+- Two balance figures on the page answer two different questions, on purpose.
+  The **stats tile** compares what is logged against capacity *elapsed so far*,
+  because "you are 32h short" every Monday is noise. The grid's **`vs. target`
+  row** compares each day against its own target and therefore sums, left to
+  right, to the week figure beside it.
+- Headline figures use `DurationConverter` (`30h 15m`) so the page reads like the
+  rest of OpenProject; the grid stays decimal, because its cells are inputs and
+  you should see back the number you typed.
+- The stats strip is a sibling of the grid, not a child. A saved cell carries its
+  refreshed figures in the same JSON response (`stats`, `day_difference`,
+  `week_difference`) rather than triggering a second request, and `/worklogs/grid`
+  returns both fragments so a dialog-driven refresh cannot leave them disagreeing.
 - Per-row Primer `ActionMenu`s were tried and dropped — at ~7.6 KB of markup each
   they made a 40-row week unreasonably heavy. Small icon affordances (CSS-masked
   octicons) are used instead.

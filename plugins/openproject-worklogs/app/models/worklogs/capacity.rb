@@ -26,6 +26,20 @@ module Worklogs
       @week.dates.sum { |date| hours_for(date) }
     end
 
+    # What the user was supposed to have logged by now. Comparing a Tuesday
+    # against the whole week's capacity would report everyone as nine hours
+    # behind, every Tuesday, which is noise rather than information.
+    def expected_so_far(today = Time.zone.today)
+      return 0.0 if today < @week.start_date
+      return total if today > @week.end_date
+
+      @week.dates.take_while { |date| date <= today }.sum { |date| hours_for(date) }
+    end
+
+    def working_days
+      @week.dates.select { |date| working_day?(date) }
+    end
+
     def working_day?(date)
       non_working_reason(date).nil?
     end

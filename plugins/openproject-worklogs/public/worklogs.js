@@ -10,6 +10,7 @@
   "use strict";
 
   var SELECTOR = "[data-worklogs-grid]";
+  var STATS_SELECTOR = "[data-worklogs-stats]";
 
   // Shared across grid instances on purpose: a turbo stream can replace the grid
   // between the two events one dialog close emits, so per-instance state would
@@ -147,6 +148,12 @@
         var parsed = new DOMParser().parseFromString(html, "text/html");
         var replacement = parsed.querySelector(SELECTOR);
         if (!replacement) throw new Error("refresh returned no grid");
+
+        // The stats strip sits outside the grid, so swap it separately; its
+        // figures moved for exactly the same reason the grid's did.
+        var stats = document.querySelector(STATS_SELECTOR);
+        var freshStats = parsed.querySelector(STATS_SELECTOR);
+        if (stats && freshStats) stats.replaceWith(freshStats);
 
         grid.root.replaceWith(replacement);
         new Grid(replacement).restoreFocus(focusKey);
@@ -340,15 +347,65 @@
 
     this.setText("[data-worklogs-day-total='" + cssEscape(input.dataset.date) + "']", format(body.day_total));
     this.setText("[data-worklogs-grand-total]", format(body.week_total) || "0");
-    this.setText("[data-worklogs-week-total]", format(body.week_total) || "0");
 
-    var bar = this.root.querySelector("[data-worklogs-progress]");
-    if (bar && typeof body.progress === "number") {
-      bar.style.width = body.progress + "%";
-    }
+    this.applyDifference(
+      this.root.querySelector("[data-worklogs-day-difference='" + cssEscape(input.dataset.date) + "']"),
+      body.day_difference
+    );
+    this.applyDifference(this.root.querySelector("[data-worklogs-week-difference]"), body.week_difference);
+    applyStats(body.stats);
 
     this.markCell(input, "-saved");
   };
+
+  // The footer's balance row carries its state in a class, so the server sends
+  // the class along with the text rather than making the browser re-derive it.
+  Grid.prototype.applyDifference = function (node, difference) {
+    if (!node || !difference) return;
+
+    node.textContent = difference.label;
+    node.classList.remove("-none", "-under", "-over", "-met");
+    node.classList.add(difference.state);
+  };
+
+  /* ---------------------------------------------------------------- stats */
+
+  // The stats strip is a sibling of the grid, not a child, so it is addressed
+  // at document level. A saved cell brings its refreshed figures with it —
+  // there is no second request behind this.
+  function applyStats(stats) {
+    if (!stats) return;
+
+    setDocumentText("[data-worklogs-week-total]", stats.logged);
+    setDocumentText("[data-worklogs-complete-days]", String(stats.complete_days));
+
+    var bar = document.querySelector("[data-worklogs-progress]");
+    if (bar && typeof stats.progress === "number") bar.style.width = stats.progress + "%";
+
+    var marker = document.querySelector("[data-worklogs-expected-marker]");
+    if (marker) {
+      var visible = typeof stats.expected_marker === "number";
+      marker.classList.toggle("-hidden", !visible);
+      if (visible) marker.style.left = stats.expected_marker + "%";
+    }
+
+    setSchemeText("[data-worklogs-difference]", stats.difference_label, stats.difference_scheme);
+    setSchemeText("[data-worklogs-missing]", stats.missing_label, stats.missing_scheme);
+  }
+
+  function setSchemeText(selector, text, scheme) {
+    var node = document.querySelector(selector);
+    if (!node) return;
+
+    node.textContent = text;
+    node.classList.remove("-muted", "-danger", "-attention", "-success");
+    if (scheme) node.classList.add("-" + scheme);
+  }
+
+  function setDocumentText(selector, text) {
+    var node = document.querySelector(selector);
+    if (node) node.textContent = text;
+  }
 
   // A cell that just gained its first entry must point at that entry's dialog,
   // not at "log more time here"; a cleared cell has to point back.

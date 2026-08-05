@@ -5,8 +5,13 @@
 
 <%= render(Primer::OpenProject::PageHeader.new) do |header| %>
   <% header.with_title { t("worklogs.label_worklogs") } %>
+  <% header.with_description { @timesheet.user.name } %>
   <% header.with_breadcrumbs(nil) %>
 <% end %>
 
 <%= render(Worklogs::Timesheets::SubHeaderComponent.new(timesheet: @timesheet)) %>
-<%= render(Worklogs::Timesheets::GridComponent.new(timesheet: @timesheet)) %>
+
+<div class="worklogs-page">
+  <%= render(Worklogs::Timesheets::StatsComponent.new(timesheet: @timesheet)) %>
+  <%= render(Worklogs::Timesheets::GridComponent.new(timesheet: @timesheet)) %>
+</div>

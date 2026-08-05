@@ -7,34 +7,27 @@
        data-week="<%= week.to_param %>"
        data-user-id="<%= user.id %>">
 
-    <div class="worklogs-grid--summary">
-      <div class="worklogs-grid--summary-figures">
-        <span class="worklogs-grid--summary-total" data-worklogs-week-total><%= worklogs_hours_figure(timesheet.total) %></span>
-        <span class="worklogs-grid--summary-capacity">
-          <%= t("worklogs.timesheet.of_capacity", capacity: worklogs_hours(capacity.total)) %>
-        </span>
-      </div>
-      <div class="worklogs-grid--summary-bar" role="presentation">
-        <div class="worklogs-grid--summary-bar-fill"
-             data-worklogs-progress
-             style="width: <%= capacity.total.zero? ? 0 : [(timesheet.total / capacity.total * 100).round, 100].min %>%"></div>
-      </div>
-    </div>
-
     <% if any_rows? %>
       <div class="worklogs-grid--scroller">
         <table class="worklogs-grid--table">
           <thead>
             <tr>
-              <th scope="col" class="worklogs-grid--row-head"><%= t("worklogs.timesheet.work_package_column") %></th>
+              <th scope="col" class="worklogs-grid--row-head">
+                <span class="worklogs-grid--column-label"><%= t("worklogs.timesheet.work_package_column") %></span>
+              </th>
               <% dates.each do |date| %>
                 <th scope="col" class="<%= column_classes(date).join(' ') %>"
                     <%= "title=#{non_working_reason(date).label.inspect}".html_safe if non_working_reason(date) %>>
                   <span class="worklogs-grid--day-name"><%= worklogs_day_name(date) %></span>
                   <span class="worklogs-grid--day-number"><%= date.day %></span>
+                  <span class="worklogs-grid--day-capacity">
+                    <%= non_working_reason(date) ? non_working_short(date) : worklogs_hours_with_unit(capacity.hours_for(date)) %>
+                  </span>
                 </th>
               <% end %>
-              <th scope="col" class="worklogs-grid--total-head"><%= t("worklogs.timesheet.total_column") %></th>
+              <th scope="col" class="worklogs-grid--total-head">
+                <span class="worklogs-grid--column-label"><%= t("worklogs.timesheet.total_column") %></span>
+              </th>
             </tr>
           </thead>
 
@@ -42,7 +35,10 @@
             <tbody class="worklogs-grid--group">
               <tr class="worklogs-grid--group-row">
                 <th scope="colgroup" colspan="<%= dates.size + 2 %>">
-                  <%= link_to group.project.name, project_path(group.project), class: "worklogs-grid--group-name" %>
+                  <span class="worklogs-grid--group-main">
+                    <%= link_to group.project.name, project_path(group.project), class: "worklogs-grid--group-name" %>
+                    <span class="worklogs-grid--group-count"><%= t("worklogs.timesheet.row_count", count: group.rows.size) %></span>
+                  </span>
                   <span class="worklogs-grid--group-total"><%= worklogs_hours_with_unit(group.total) %></span>
                 </th>
               </tr>
@@ -52,27 +48,28 @@
                   <th scope="row" class="worklogs-grid--row-head">
                     <div class="worklogs-grid--row-main">
                       <div class="worklogs-grid--row-text">
-                        <div class="worklogs-grid--row-title">
-                          <% if entity_path(row) %>
-                            <%= link_to row.reference, entity_path(row), class: "worklogs-grid--row-reference" %>
-                          <% end %>
-                          <span class="worklogs-grid--row-subject" title="<%= row.subject %>"><%= row.subject %></span>
-                        </div>
-                        <% if row.activity %>
-                          <%= render(Primer::Beta::Label.new(scheme: :secondary, size: :medium)) { row.activity.name } %>
+                        <%# Core's own type + id + status line, so a row here reads
+                            exactly like a work package anywhere else in the product. %>
+                        <% if row.work_package? %>
+                          <div class="worklogs-grid--row-info">
+                            <%= render(WorkPackages::InfoLineComponent.new(work_package: row.entity, wrap: false)) %>
+                          </div>
                         <% end %>
+                        <div class="worklogs-grid--row-title">
+                          <span class="worklogs-grid--row-subject" title="<%= row.subject %>"><%= row.subject %></span>
+                          <% if row.activity %>
+                            <span class="worklogs-grid--row-activity"><%= row.activity.name %></span>
+                          <% end %>
+                        </div>
                       </div>
 
                       <%# A Primer ActionMenu here would cost ~7.6 KB of markup per
                           row, which a 40-row week cannot afford — and it would
                           only repeat what is already one click away: the work
-                          package is linked in the title and every cell has its
-                          own detail button. All that is left is dropping an
-                          empty row, and a row with hours is dropped by clearing
-                          its cells, so no destructive action hides behind this. %>
-                      <%# Rendered even on rows that currently have hours, hidden by
-                          class, so clearing the last cell reveals it without a
-                          round trip. %>
+                          package is linked above and every cell has its own
+                          detail button. All that is left is dropping an empty
+                          row, and a row with hours is dropped by clearing its
+                          cells, so no destructive action hides behind this. %>
                       <%= link_to "",
                                   remove_row_path(row),
                                   class: "worklogs-grid--row-remove #{'-hidden' unless removable?(row)}",
@@ -97,6 +94,10 @@
                         <span class="worklogs-grid--cell-static" title="<%= cell_title(cell) %>">
                           <%= worklogs_hours(cell.hours) %>
                         </span>
+                      <% end %>
+
+                      <% if cell.comments.any? %>
+                        <span class="worklogs-grid--cell-note" title="<%= cell.comments.join(' · ') %>" aria-hidden="true"></span>
                       <% end %>
 
                       <% if show_cell_dialog?(row, cell) %>
@@ -142,14 +143,16 @@
                 <%= worklogs_hours_figure(timesheet.total) %>
               </td>
             </tr>
-            <tr class="worklogs-grid--capacity">
-              <th scope="row"><%= t("worklogs.timesheet.capacity") %></th>
+            <tr class="worklogs-grid--difference">
+              <th scope="row"><%= t("worklogs.timesheet.difference") %></th>
               <% dates.each do |date| %>
-                <td class="<%= (column_classes(date) - ['worklogs-grid--day']).unshift('worklogs-grid--footer-cell').join(' ') %>">
-                  <%= worklogs_hours(capacity.hours_for(date)) %>
+                <td class="<%= difference_classes(date).join(' ') %>" data-worklogs-day-difference="<%= date.iso8601 %>">
+                  <%= day_difference_label(date) %>
                 </td>
               <% end %>
-              <td class="worklogs-grid--grand-total"><%= worklogs_hours(capacity.total) %></td>
+              <td class="worklogs-grid--grand-total <%= week_difference_class %>" data-worklogs-week-difference>
+                <%= week_difference_label %>
+              </td>
             </tr>
           </tfoot>
         </table>

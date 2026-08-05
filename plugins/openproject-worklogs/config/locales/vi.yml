@@ -4,6 +4,21 @@ vi:
     capacity:
       non_working_day: "Ngày nghỉ"
       absence: "Vắng mặt"
+      holiday_short: "Lễ"
+      absence_short: "Nghỉ"
+      weekend_short: "Cuối tuần"
+    stats:
+      logged: "Đã log tuần này"
+      of_capacity: "trên định mức %{capacity}"
+      difference: "Chênh lệch"
+      expected_by_now: "Đến hôm nay cần %{hours}"
+      expected_marker: "Đúng tiến độ hôm nay: %{hours}"
+      on_track: "Đúng tiến độ"
+      days_complete: "Ngày đã đủ"
+      days_complete_caption: "Ngày làm việc đạt định mức"
+      missing: "Chưa log"
+      missing_caption: "Ngày làm việc còn trống"
+      nothing_missing: "Không thiếu ngày nào"
     timesheet:
       week_number: "Tuần %{number}"
       of_capacity: "trên %{capacity}h"
@@ -11,6 +26,10 @@ vi:
       total_column: "Tổng"
       daily_total: "Đã log"
       capacity: "Định mức"
+      difference: "So định mức"
+      row_count:
+        one: "1 dòng"
+        other: "%{count} dòng"
       cell_label: "Số giờ cho %{subject}, %{date}"
       split_cell_hint: "Ngày này có nhiều bản ghi — mở ngày để chỉnh sửa"
       blank_heading: "Tuần này chưa log giờ nào"

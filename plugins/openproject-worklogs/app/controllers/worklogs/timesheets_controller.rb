@@ -15,12 +15,13 @@ module Worklogs
       @timesheet = Timesheet.new(user: @user, week: @week, viewer: current_user)
     end
 
-    # Bare grid fragment, no layout: the browser swaps it in after a core time
-    # entry dialog reports a change.
+    # Bare stats + grid fragment, no layout: the browser swaps both in after a
+    # core time entry dialog reports a change. The stats strip has to come along
+    # or the week total would keep claiming whatever it said before the dialog.
     def grid
-      timesheet = Timesheet.new(user: @user, week: @week, viewer: current_user)
+      @timesheet = Timesheet.new(user: @user, week: @week, viewer: current_user)
 
-      render(Worklogs::Timesheets::GridComponent.new(timesheet:), layout: false)
+      render "grid", layout: false
     end
 
     private

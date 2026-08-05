@@ -1,10 +1,131 @@
 /*
- * Worklogs timesheet grid.
+ * Worklogs timesheet.
  *
  * Everything is expressed in Primer primitives (--bgColor-*, --fgColor-*,
- * --borderColor-*, --base-size-*) so the grid inherits OpenProject's light and
+ * --borderColor-*, --base-size-*) so the page inherits OpenProject's light and
  * dark themes and any custom design colours without a second definition.
  */
+
+.worklogs-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-16, 16px);
+  padding: var(--base-size-16, 16px) var(--base-size-16, 16px) var(--base-size-32, 32px);
+}
+
+/* ------------------------------------------------------------------ stats */
+
+/* Four figures, always in the same place: how much is logged, whether that is
+   on track *today*, how many days are finished, and which days are still
+   empty. Everything else on the page is detail underneath these. */
+.worklogs-stats {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.6fr) repeat(3, minmax(150px, 1fr));
+  gap: var(--base-size-12, 12px);
+}
+
+@media (max-width: 900px) {
+  .worklogs-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .worklogs-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.worklogs-stats--tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-2, 2px);
+  padding: var(--base-size-12, 12px) var(--base-size-16, 16px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  min-width: 0;
+}
+
+.worklogs-stats--tile.-primary {
+  background: var(--bgColor-muted, var(--bgColor-default));
+}
+
+.worklogs-stats--label {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-stats--value {
+  font-size: var(--text-title-size-medium, 20px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--text-title-lineHeight-medium, 1.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A list of weekday names is prose, not a figure — it should not shout at the
+   same volume as "32h 15m". */
+.worklogs-stats--value.-small {
+  font-size: var(--text-body-size-large, 16px);
+}
+
+.worklogs-stats--value.-muted { color: var(--fgColor-muted); }
+.worklogs-stats--value.-danger { color: var(--fgColor-danger); }
+.worklogs-stats--value.-attention { color: var(--fgColor-attention); }
+.worklogs-stats--value.-success { color: var(--fgColor-success); }
+
+.worklogs-stats--of {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-medium, 14px);
+  font-weight: var(--base-text-weight-normal, 400);
+}
+
+/* Captions wrap rather than truncate: a tile is only as wide as a quarter of
+   the page, and "Working days that met…" explains nothing. */
+.worklogs-stats--caption {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  line-height: 1.35;
+}
+
+.worklogs-stats--bar {
+  position: relative;
+  height: var(--base-size-8, 8px);
+  margin-top: var(--base-size-8, 8px);
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--bgColor-neutral-muted);
+}
+
+.worklogs-stats--bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bgColor-accent-emphasis);
+  transition: width 160ms ease-out;
+}
+
+/* "Where the week should stand right now" — without it the bar only answers
+   how full the week is, which says nothing on a Tuesday. */
+.worklogs-stats--bar-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--fgColor-default);
+  opacity: 0.55;
+}
+
+.worklogs-stats--bar-marker.-hidden {
+  display: none;
+}
+
+/* ------------------------------------------------------------------- grid */
 
 .worklogs-grid {
   --worklogs-icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2'/%3E%3C/svg%3E");
@@ -13,61 +134,7 @@
 
   display: flex;
   flex-direction: column;
-  gap: var(--stack-gap-condensed, 8px);
-  padding: 0 var(--base-size-16, 16px) var(--base-size-24, 24px);
 }
-
-/* ---------------------------------------------------------------- summary */
-
-.worklogs-grid--summary {
-  display: flex;
-  align-items: center;
-  gap: var(--base-size-16, 16px);
-  padding: var(--base-size-8, 8px) 0;
-}
-
-.worklogs-grid--summary-figures {
-  display: flex;
-  align-items: baseline;
-  gap: var(--base-size-4, 4px);
-  white-space: nowrap;
-}
-
-.worklogs-grid--summary-total {
-  font-size: var(--text-title-size-medium, 20px);
-  font-weight: var(--base-text-weight-semibold, 600);
-  font-variant-numeric: tabular-nums;
-}
-
-.worklogs-grid--summary-total::after {
-  content: "h";
-  font-size: var(--text-body-size-medium, 14px);
-  font-weight: var(--base-text-weight-normal, 400);
-  color: var(--fgColor-muted);
-}
-
-.worklogs-grid--summary-capacity {
-  color: var(--fgColor-muted);
-  font-size: var(--text-body-size-medium, 14px);
-}
-
-.worklogs-grid--summary-bar {
-  flex: 1;
-  max-width: 320px;
-  height: var(--base-size-8, 8px);
-  border-radius: var(--borderRadius-full, 999px);
-  background: var(--bgColor-neutral-muted);
-  overflow: hidden;
-}
-
-.worklogs-grid--summary-bar-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--bgColor-accent-emphasis);
-  transition: width 160ms ease-out;
-}
-
-/* ------------------------------------------------------------------ table */
 
 .worklogs-grid--scroller {
   overflow-x: auto;
@@ -76,8 +143,15 @@
   background: var(--bgColor-default);
 }
 
+/* Fixed layout on purpose: with auto layout the work package column takes as
+   much room as its longest subject wants, which pushes the week total off the
+   right edge on a normal screen. Fixed widths keep the total in view and let
+   long subjects ellipsize, and the min-width hands narrow screens a scrollbar
+   instead of seven unreadable columns. */
 .worklogs-grid--table {
   width: 100%;
+  min-width: 880px;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--text-body-size-medium, 14px);
@@ -104,9 +178,13 @@
   padding: var(--base-size-8, 8px) var(--base-size-4, 4px);
 }
 
+.worklogs-grid--column-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .worklogs-grid--day {
-  width: 76px;
-  min-width: 76px;
+  width: 8.5%;
 }
 
 .worklogs-grid--day-name {
@@ -118,15 +196,28 @@
 .worklogs-grid--day-number {
   display: block;
   color: var(--fgColor-default);
-  font-size: var(--text-body-size-medium, 14px);
+  font-size: var(--text-title-size-small, 16px);
+  line-height: 1.2;
+}
+
+/* What the day asks for, stated up front — a cell can only read as "short"
+   against a target the reader can see. */
+.worklogs-grid--day-capacity {
+  display: block;
+  margin-top: 1px;
+  color: var(--fgColor-muted);
+  font-weight: var(--base-text-weight-normal, 400);
+  font-variant-numeric: tabular-nums;
 }
 
 .worklogs-grid--table thead th.-today {
   background: var(--bgColor-accent-muted);
   color: var(--fgColor-accent);
+  box-shadow: inset 0 3px 0 var(--bgColor-accent-emphasis);
 }
 
-.worklogs-grid--table thead th.-today .worklogs-grid--day-number {
+.worklogs-grid--table thead th.-today .worklogs-grid--day-number,
+.worklogs-grid--table thead th.-today .worklogs-grid--day-capacity {
   color: var(--fgColor-accent);
 }
 
@@ -141,12 +232,11 @@
   position: sticky;
   left: 0;
   z-index: 2;
-  min-width: 280px;
-  max-width: 420px;
+  width: 32%;
   background: var(--bgColor-default);
   text-align: left;
   font-weight: var(--base-text-weight-normal, 400);
-  padding: var(--base-size-6, 6px) var(--base-size-12, 12px);
+  padding: var(--base-size-8, 8px) var(--base-size-12, 12px);
   border-right: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
 }
 
@@ -154,6 +244,10 @@
   z-index: 4;
   background: var(--bgColor-muted);
   text-align: left;
+}
+
+.worklogs-grid--row:hover .worklogs-grid--row-head {
+  background: var(--bgColor-muted);
 }
 
 .worklogs-grid--row-main {
@@ -166,6 +260,23 @@
 .worklogs-grid--row-text {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Core's own type + id + status line, shrunk to a caption: a row here reads
+   exactly like a work package anywhere else in the product. */
+.worklogs-grid--row-info {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-4, 4px);
+  font-size: var(--text-body-size-small, 12px);
+  line-height: 1.4;
+  margin-bottom: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.worklogs-grid--row-info .Label {
+  font-size: var(--text-body-size-small, 12px);
 }
 
 /* The remove button only appears once the row is pointed at or keyboard-focused,
@@ -217,15 +328,22 @@
   min-width: 0;
 }
 
-.worklogs-grid--row-reference {
-  color: var(--fgColor-muted);
-  font-variant-numeric: tabular-nums;
-  flex: none;
-}
-
 .worklogs-grid--row-subject {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A pinned activity is what makes two rows of the same work package different,
+   so it has to be visible without hovering anything. */
+.worklogs-grid--row-activity {
+  flex: none;
+  padding: 0 var(--base-size-6, 6px);
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--bgColor-neutral-muted);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  line-height: 18px;
   white-space: nowrap;
 }
 
@@ -240,15 +358,28 @@
   font-size: var(--text-body-size-small, 12px);
   font-weight: var(--base-text-weight-semibold, 600);
   color: var(--fgColor-muted);
+  border-top: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+}
+
+.worklogs-grid--group-main {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--base-size-8, 8px);
 }
 
 .worklogs-grid--group-name {
-  color: inherit;
+  color: var(--fgColor-default);
+}
+
+.worklogs-grid--group-count {
+  color: var(--fgColor-muted);
+  font-weight: var(--base-text-weight-normal, 400);
 }
 
 .worklogs-grid--group-total {
   float: right;
   font-variant-numeric: tabular-nums;
+  color: var(--fgColor-default);
 }
 
 /* Cells ------------------------------------------------------------------- */
@@ -308,6 +439,18 @@
   mask-image: var(--worklogs-icon-plus);
 }
 
+/* A cell holding a comment says so, and hovering reads it back — otherwise the
+   only sign that a number carries context is opening its dialog. */
+.worklogs-grid--cell-note {
+  position: absolute;
+  left: 3px;
+  bottom: 3px;
+  width: var(--base-size-4, 4px);
+  height: var(--base-size-4, 4px);
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--fgColor-accent);
+}
+
 .worklogs-grid--cell.-today {
   background: var(--bgColor-accent-muted);
 }
@@ -318,7 +461,7 @@
 
 .worklogs-grid--cell-input {
   width: 100%;
-  height: 36px;
+  height: 38px;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -339,14 +482,10 @@
   outline: 2px solid var(--borderColor-accent-emphasis, var(--fgColor-accent));
 }
 
-.worklogs-grid--cell-input::placeholder {
-  color: var(--fgColor-muted);
-}
-
 .worklogs-grid--cell-static {
   display: block;
-  height: 36px;
-  line-height: 36px;
+  height: 38px;
+  line-height: 38px;
   color: var(--fgColor-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -379,16 +518,16 @@
 
 @media (prefers-reduced-motion: reduce) {
   .worklogs-grid--cell.-saved .worklogs-grid--cell-input { animation: none; }
-  .worklogs-grid--summary-bar-fill { transition: none; }
+  .worklogs-stats--bar-fill,
   .worklogs-grid--cell-detail,
-  .worklogs-grid--row-actions { transition: none; }
+  .worklogs-grid--row-remove { transition: none; }
 }
 
 /* Touch and keyboard-only users never get a hover, so reveal both affordances
    permanently rather than hiding functionality behind a pointer. */
 @media (hover: none) {
   .worklogs-grid--cell-detail,
-  .worklogs-grid--row-actions { opacity: 1; }
+  .worklogs-grid--row-remove { opacity: 1; }
 }
 
 /* Totals ------------------------------------------------------------------ */
@@ -396,29 +535,35 @@
 .worklogs-grid--row-total,
 .worklogs-grid--grand-total,
 .worklogs-grid--total-head {
-  width: 84px;
-  min-width: 84px;
+  width: 8.5%;
   text-align: center;
   font-variant-numeric: tabular-nums;
   font-weight: var(--base-text-weight-semibold, 600);
   border-left: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
 }
 
-.worklogs-grid--table tfoot th,
-.worklogs-grid--table tfoot td {
+/* The footer sticks as one block rather than row by row: two sticky rows would
+   need the second one's height hard-coded as the first one's offset, and that
+   number is a font-size change away from being wrong. */
+.worklogs-grid--table tfoot {
   position: sticky;
   bottom: 0;
+  z-index: 3;
+}
+
+.worklogs-grid--table tfoot th,
+.worklogs-grid--table tfoot td {
   background: var(--bgColor-muted);
   padding: var(--base-size-8, 8px) var(--base-size-4, 4px);
   text-align: center;
   font-variant-numeric: tabular-nums;
-  border-top: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
   border-bottom: none;
 }
 
 .worklogs-grid--table tfoot th {
+  position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: 1;
   text-align: left;
   padding-left: var(--base-size-12, 12px);
   color: var(--fgColor-muted);
@@ -428,24 +573,42 @@
   letter-spacing: 0.04em;
 }
 
+.worklogs-grid--totals th,
+.worklogs-grid--totals td {
+  border-top: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+}
+
 .worklogs-grid--totals td {
   font-weight: var(--base-text-weight-semibold, 600);
 }
 
-.worklogs-grid--totals td.-over {
+/* Short of the day's target is the problem worth a red; past it is worth
+   noticing but not alarming. The balance row below reads the same way, so a
+   column never contradicts itself. */
+.worklogs-grid--totals td.-under {
   color: var(--fgColor-danger);
 }
 
-.worklogs-grid--totals td.-under {
+.worklogs-grid--totals td.-over {
   color: var(--fgColor-attention);
 }
 
-.worklogs-grid--capacity td,
-.worklogs-grid--capacity th {
+/* The balance row is the whole point of showing capacity: per day and for the
+   week, how far off target the person is right now. Days that ask for nothing,
+   and days still ahead, stay blank rather than reporting a deficit nobody
+   owes yet. */
+.worklogs-grid--difference th,
+.worklogs-grid--difference td {
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  padding-top: 0;
   color: var(--fgColor-muted);
-  font-weight: var(--base-text-weight-normal, 400);
-  border-top: none;
 }
+
+.worklogs-grid--difference td.-under { color: var(--fgColor-danger); }
+.worklogs-grid--difference td.-over { color: var(--fgColor-attention); }
+.worklogs-grid--difference td.-met { color: var(--fgColor-success); }
+.worklogs-grid--difference td.-none { color: var(--fgColor-muted); }
 
 /* Add-row dialog --------------------------------------------------------- */
 
