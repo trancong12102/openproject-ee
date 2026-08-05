@@ -1,0 +1,18 @@
+<% content_for :header_tags do %>
+  <%= tag.link(rel: "stylesheet", href: OpenProject::Worklogs::Assets.path("worklogs.css")) %>
+  <%= javascript_include_tag OpenProject::Worklogs::Assets.path("worklogs.js"), defer: true %>
+<% end %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header| %>
+  <% header.with_title { t("worklogs.team.title") } %>
+  <% header.with_description { t("worklogs.team.description") } %>
+  <% header.with_breadcrumbs(nil) %>
+<% end %>
+
+<%= render(Worklogs::Team::SubHeaderComponent.new(query: @query)) %>
+
+<div class="worklogs-page">
+  <%= render(Worklogs::Team::FilterBarComponent.new(query: @query, viewer: current_user)) %>
+  <%= render(Worklogs::Team::SummaryComponent.new(sheet: @sheet)) %>
+  <%= render(Worklogs::Team::TableComponent.new(sheet: @sheet, query: @query)) %>
+</div>

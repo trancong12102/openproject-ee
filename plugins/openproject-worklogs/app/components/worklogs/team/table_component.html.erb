@@ -1,0 +1,119 @@
+<%= component_wrapper do %>
+  <div class="worklogs-panel">
+    <% if any? %>
+      <div class="worklogs-team--scroll">
+        <table class="worklogs-team--table <%= "-month" if month? %>">
+          <thead>
+            <tr>
+              <th scope="col" class="worklogs-team--person">
+                <%= t("worklogs.reports.dimensions.user") %>
+              </th>
+              <% dates.each do |date| %>
+                <th scope="col" class="<%= column_classes(date).join(' ') %>">
+                  <% if week_start?(date) || (month? && date == dates.first) %>
+                    <span class="worklogs-team--week-tag"><%= week_tag(date) %></span>
+                  <% end %>
+                  <span class="worklogs-team--day-name"><%= worklogs_day_name(date) %></span>
+                  <span class="worklogs-team--day-number"><%= date.day %></span>
+                </th>
+              <% end %>
+              <th scope="col" class="worklogs-team--number"><%= t("worklogs.team.total") %></th>
+              <th scope="col" class="worklogs-team--number"><%= t("worklogs.team.difference") %></th>
+              <th scope="col" class="worklogs-team--number"><%= t("worklogs.coverage.utilization") %></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% rows.each do |row| %>
+              <tr class="worklogs-team--row">
+                <th scope="row" class="worklogs-team--person">
+                  <span class="worklogs-team--person-main">
+                    <a class="worklogs-team--toggle <%= "-open" if expanded?(row) %>"
+                       href="<%= toggle_href(row) %>"
+                       aria-label="<%= toggle_label(row) %>"
+                       title="<%= toggle_label(row) %>"
+                       aria-expanded="<%= expanded?(row) %>"></a>
+                    <a class="worklogs-team--person-name" href="<%= person_href(row) %>">
+                      <%= row.user.name %>
+                    </a>
+                  </span>
+                  <span class="worklogs-team--person-capacity">
+                    <%= t("worklogs.stats.of_capacity", capacity: worklogs_duration(row.capacity)) %>
+                  </span>
+                </th>
+
+                <% dates.each do |date| %>
+                  <td class="<%= cell_classes(row, date).join(' ') %>">
+                    <a href="<%= cell_href(row, date) %>" title="<%= cell_title(row, date) %>">
+                      <%= worklogs_hours(row.on(date)) %>
+                    </a>
+                  </td>
+                <% end %>
+
+                <td class="worklogs-team--number -total"><%= worklogs_hours_figure(row.logged) %></td>
+                <td class="worklogs-team--number <%= difference_scheme(row.difference) %>">
+                  <%= row_difference_label(row) %>
+                </td>
+                <td class="worklogs-team--number"><%= utilization_label(row.utilization) %></td>
+              </tr>
+
+              <%# What they were actually working on, for anyone opened up. %>
+              <% row.details.each do |detail| %>
+                <tr class="worklogs-team--detail-row">
+                  <th scope="row" class="worklogs-team--person -detail">
+                    <span class="worklogs-team--detail-main">
+                      <% if detail_href(detail) %>
+                        <a href="<%= detail_href(detail) %>"><%= detail_label(detail) %></a>
+                      <% else %>
+                        <span><%= detail_label(detail) %></span>
+                      <% end %>
+                      <% if detail.activity %>
+                        <span class="worklogs-team--detail-activity"><%= detail.activity.name %></span>
+                      <% end %>
+                    </span>
+                  </th>
+
+                  <% dates.each do |date| %>
+                    <td class="<%= detail_cell_classes(date).join(' ') %>">
+                      <%= worklogs_hours(detail.cell(date).hours) %>
+                    </td>
+                  <% end %>
+
+                  <td class="worklogs-team--number -total"><%= worklogs_hours_figure(detail.total) %></td>
+                  <td class="worklogs-team--number"></td>
+                  <td class="worklogs-team--number"></td>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+
+          <tfoot>
+            <tr>
+              <th scope="row" class="worklogs-team--person"><%= t("worklogs.coverage.everyone") %></th>
+              <% dates.each do |date| %>
+                <td class="<%= (column_classes(date) - ['worklogs-team--day']).unshift('worklogs-team--cell').join(' ') %>">
+                  <%= worklogs_hours(daily_total(date)) %>
+                </td>
+              <% end %>
+              <td class="worklogs-team--number -total"><%= worklogs_hours_figure(total) %></td>
+              <td class="worklogs-team--number <%= difference_scheme(difference) %>">
+                <%= difference.zero? ? "±0" : "#{difference.positive? ? '+' : '−'}#{worklogs_hours(difference.abs)}" %>
+              </td>
+              <td class="worklogs-team--number"><%= utilization_label(utilization) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <% notes.each do |note| %>
+        <p class="worklogs-panel--note"><%= note %></p>
+      <% end %>
+    <% else %>
+      <%= render(Primer::Beta::Blankslate.new(border: false)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: "people") %>
+        <% blankslate.with_heading(tag: :h3).with_content(t("worklogs.team.blank_heading")) %>
+        <% blankslate.with_description { blank_description } %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

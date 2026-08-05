@@ -56,7 +56,8 @@ module OpenProject
           # useful "just me" version of it.
           permission :view_worklogs_coverage,
                      {
-                       "worklogs/coverage": %i[index]
+                       "worklogs/coverage": %i[index],
+                       "worklogs/team": %i[index]
                      },
                      permissible_on: :global,
                      require: :loggedin
@@ -86,6 +87,13 @@ module OpenProject
              caption: :"worklogs.timesheet.title",
              parent: :worklogs,
              if: ->(*) { User.current.allowed_globally?(:view_worklogs) }
+
+        menu :global_menu,
+             :worklogs_team,
+             { controller: "/worklogs/team", action: :index },
+             caption: :"worklogs.team.title",
+             parent: :worklogs,
+             if: ->(*) { User.current.allowed_globally?(:view_worklogs_coverage) }
 
         menu :global_menu,
              :worklogs_reports,

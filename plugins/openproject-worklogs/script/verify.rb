@@ -14,6 +14,7 @@
 # against an instance with real data in it.
 
 require "yaml"
+require "csv"
 
 module WorklogsVerify
   PLUGIN_ROOT = Rails.root.join("plugins/openproject-worklogs")
@@ -148,10 +149,11 @@ run.group("Permissions and menus") do
     true
   end
 
-  run.check("the global menu carries all four entries") do
+  run.check("the global menu carries all five entries, in reading order") do
     children = Redmine::MenuManager.items(:global_menu).children
                                    .find { |i| i.name == :worklogs }&.children&.map(&:name)
-    children == %i[worklogs_timesheet worklogs_reports worklogs_coverage worklogs_approvals]
+    children == %i[worklogs_timesheet worklogs_team worklogs_reports worklogs_coverage
+                   worklogs_approvals]
   end
 
   run.check("the admin menu carries the settings page") do
@@ -562,6 +564,100 @@ run.group("Report filters") do
       dimension&.requires_work_package_join? && dimension.expression.start_with?("work_packages.") &&
         dimension.resolve([]).empty? && dimension.label.present?
     end
+  end
+end
+
+run.group("Team sheet") do
+  viewer = User.active.not_builtin.first || User.anonymous
+  span = Worklogs::Week.current
+  base = Worklogs::Team::Query.from_params({ date: span.to_param })
+  sheet = ->(query) { Worklogs::Team::Sheet.new(query:, viewer:) }
+
+  run.check("the page is its URL, defaults left out of it") do
+    base.to_params == { date: span.to_param } &&
+      base.merge(scope: "everyone", sort: "hours").to_params[:scope] == "everyone" &&
+      Worklogs::Team::Query.from_params(base.to_params).to_params == base.to_params
+  end
+
+  run.check("a span replaces a span whole, dates included") do
+    month = base.with_span(Worklogs::Month.containing(Date.new(2026, 8, 14)))
+
+    month.span.is_a?(Worklogs::Month) && month.to_params[:span] == "month" &&
+      month.with_span(Worklogs::Week.current).to_params[:span].nil?
+  end
+
+  # Expansion rides in the URL like every other control, so it survives the back
+  # button and can be sent to somebody as a link.
+  run.check("opening a person up is a link, and toggles back off") do
+    user = User.active.not_builtin.first
+    next run.skip("expansion", "no users") if user.nil?
+
+    opened = base.toggling(user)
+
+    opened.expanded?(user) && opened.to_params[:expand] == [user.id] &&
+      !opened.toggling(user).expanded?(user)
+  end
+
+  run.check("at most a handful of people can be opened at once") do
+    Worklogs::Team::Query.from_params({ expand: (1..20).to_a }).expanded_ids.size ==
+      Worklogs::Team::Query::MAX_EXPANDED
+  end
+
+  run.check("a person's line adds up to their days") do
+    row = sheet.call(base.merge(scope: "everyone")).rows.first
+    next run.skip("row arithmetic", "nobody to show") if row.nil?
+
+    row.logged == span.dates.sum { |date| row.on(date) }.round(2)
+  end
+
+  # The balance is measured against what was owed *by today*: a table that calls
+  # everybody 32 hours short every Monday is a table nobody opens twice.
+  run.check("the balance is owed-so-far, never the whole span") do
+    row = sheet.call(base.merge(scope: "everyone")).rows.first
+    next run.skip("balance", "nobody to show") if row.nil?
+
+    row.expected <= row.capacity && row.difference == (row.logged - row.expected).round(2)
+  end
+
+  run.check("the default list is the people with time on it") do
+    everyone = sheet.call(base.merge(scope: "everyone"))
+    logged = sheet.call(base)
+    next run.skip("scope", "nobody logged anything this week") if logged.rows.empty?
+
+    logged.rows.all?(&:logged?) && logged.rows.size <= everyone.rows.size &&
+      logged.logged_count == everyone.logged_count
+  end
+
+  run.check("ordering by hours is stable, and by name is the default") do
+    ordered = sheet.call(base.merge(scope: "everyone", sort: "hours")).rows
+    named = sheet.call(base.merge(scope: "everyone")).rows
+
+    ordered.map(&:logged) == ordered.map(&:logged).sort.reverse &&
+      named.map(&:sort_key) == named.map(&:sort_key).sort
+  end
+
+  # A day nobody was asked to work is not a day anybody is missing.
+  run.check("a gap is an empty working day that has already happened") do
+    row = sheet.call(base.merge(scope: "everyone")).rows.first
+    next run.skip("gaps", "nobody to show") if row.nil?
+
+    span.dates.none? { |date| row.gap?(date) && (row.off?(date) || date > Time.zone.today) }
+  end
+
+  run.check("the sheet cannot be widened past what the viewer may see in core") do
+    source = Worklogs::Team::Sheet.instance_method(:logged).source_location
+    body = File.read(source.first).lines[(source.last - 1)..(source.last + 6)].join
+
+    body.include?("TimeEntry.visible(viewer)")
+  end
+
+  run.check("the export writes numbers, and says what it left out") do
+    csv = Worklogs::Team::CsvExport.new(sheet: sheet.call(base.merge(scope: "everyone"))).to_csv
+    header = CSV.parse_line(csv)
+
+    header.first == I18n.t("worklogs.reports.dimensions.user") &&
+      header.include?(span.start_date.iso8601) &&
+      csv.include?(I18n.t("worklogs.team.export_note"))
   end
 end
 

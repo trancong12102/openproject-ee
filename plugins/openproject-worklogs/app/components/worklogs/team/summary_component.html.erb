@@ -1,0 +1,35 @@
+<%= component_wrapper do %>
+  <div class="worklogs-stats">
+    <div class="worklogs-stats--tile -primary">
+      <span class="worklogs-stats--label"><%= logged_label %></span>
+      <span class="worklogs-stats--value"><%= worklogs_duration(total) %></span>
+      <span class="worklogs-stats--caption">
+        <%= t("worklogs.stats.of_capacity", capacity: worklogs_duration(capacity)) %>
+      </span>
+
+      <div class="worklogs-stats--bar" role="presentation">
+        <div class="worklogs-stats--bar-fill" style="width: <%= progress %>%"></div>
+      </div>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.stats.difference") %></span>
+      <span class="worklogs-stats--value -<%= difference_scheme %>"><%= difference_label %></span>
+      <span class="worklogs-stats--caption">
+        <%= t("worklogs.stats.expected_by_now", hours: worklogs_duration(expected)) %>
+      </span>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.coverage.utilization") %></span>
+      <span class="worklogs-stats--value"><%= utilization_label %></span>
+      <span class="worklogs-stats--caption"><%= t("worklogs.team.utilization_caption") %></span>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.team.people") %></span>
+      <span class="worklogs-stats--value"><%= people_count %></span>
+      <span class="worklogs-stats--caption"><%= people_caption %></span>
+    </div>
+  </div>
+<% end %>

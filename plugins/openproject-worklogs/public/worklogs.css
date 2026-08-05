@@ -2215,3 +2215,270 @@
 .worklogs-home--link {
   font-size: 0.8125rem;
 }
+
+/* ================================================================== team === */
+
+/* The same grid as the personal sheet with people where the work packages
+   usually are, so a manager reading one has already learned the other. */
+.worklogs-team--scroll {
+  overflow-x: auto;
+}
+
+.worklogs-team--table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-body-size-medium, 14px);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thirty-one columns will not fit on any screen; the person column stays
+   pinned to the left of them, so a row can still be read at the far end of
+   the month. */
+.worklogs-team--table.-month {
+  min-width: 1800px;
+}
+
+.worklogs-team--table th,
+.worklogs-team--table td {
+  padding: var(--base-size-4, 4px) var(--base-size-8, 8px);
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.worklogs-team--table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bgColor-muted);
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-team--day {
+  width: 46px;
+  min-width: 46px;
+}
+
+.worklogs-team--table.-month .worklogs-team--day {
+  width: 40px;
+  min-width: 40px;
+}
+
+.worklogs-team--week-tag {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--fgColor-accent);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-team--day-name {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-team--day-number {
+  display: block;
+  color: var(--fgColor-default);
+  font-size: var(--text-title-size-small, 16px);
+  line-height: 1.2;
+}
+
+.worklogs-team--table thead th.-today {
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+  box-shadow: inset 0 3px 0 var(--bgColor-accent-emphasis);
+}
+
+.worklogs-team--table thead th.-today .worklogs-team--day-number {
+  color: var(--fgColor-accent);
+}
+
+.worklogs-team--table td.-today {
+  background: var(--bgColor-accent-muted);
+}
+
+.worklogs-team--table thead th.-non-working .worklogs-team--day-number {
+  color: var(--fgColor-muted);
+  font-weight: var(--base-text-weight-normal, 400);
+}
+
+/* The seam between two weeks, so a month reads a week at a time. */
+.worklogs-team--table th.-week-start,
+.worklogs-team--table td.-week-start {
+  border-left: var(--borderWidth-thin, 1px) solid var(--borderColor-emphasis, var(--borderColor-default));
+}
+
+/* Qualified by the table for the same reason the personal grid's row head is:
+   a bare class would lose the tie against `.worklogs-team--table th`. */
+.worklogs-team--table .worklogs-team--person {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 15rem;
+  background: var(--bgColor-default);
+  padding: var(--base-size-8, 8px) var(--base-size-12, 12px);
+  border-right: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  text-align: left;
+  font-weight: var(--base-text-weight-normal, 400);
+}
+
+.worklogs-team--table thead .worklogs-team--person {
+  z-index: 4;
+  background: var(--bgColor-muted);
+}
+
+.worklogs-team--person-main {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-4, 4px);
+  min-width: 0;
+}
+
+.worklogs-team--person-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.worklogs-team--person-capacity {
+  display: block;
+  margin-left: var(--base-size-24, 24px);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+/* A chevron drawn from two borders rather than an icon request: there is one
+   per person and a forty-person page should not fetch forty glyphs. */
+.worklogs-team--toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-20, 20px);
+  height: var(--base-size-20, 20px);
+  border-radius: var(--borderRadius-medium, 6px);
+  color: var(--fgColor-muted);
+}
+
+.worklogs-team--toggle::after {
+  content: "";
+  width: var(--base-size-6, 6px);
+  height: var(--base-size-6, 6px);
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  margin-left: -2px;
+}
+
+.worklogs-team--toggle.-open::after {
+  transform: rotate(135deg);
+  margin-top: -3px;
+  margin-left: 0;
+}
+
+.worklogs-team--toggle:hover {
+  background: var(--bgColor-muted);
+  color: var(--fgColor-default);
+}
+
+.worklogs-team--cell a {
+  display: block;
+  min-height: var(--base-size-20, 20px);
+  color: inherit;
+  text-decoration: none;
+}
+
+.worklogs-team--cell a:hover {
+  text-decoration: underline;
+}
+
+/* Not a working day for this person — their weekend, their holiday, their
+   absence. Nothing missing here, so nothing to point at. */
+.worklogs-team--cell.-off {
+  background: var(--bgColor-inset, var(--bgColor-muted));
+  color: var(--fgColor-muted);
+}
+
+/* A working day that has already passed with nothing on it: the one cell on
+   this page worth a colour. */
+.worklogs-team--cell.-gap a::after {
+  content: "";
+  display: block;
+  width: var(--base-size-4, 4px);
+  height: var(--base-size-4, 4px);
+  margin: var(--base-size-8, 8px) auto 0;
+  border-radius: 50%;
+  background: var(--bgColor-attention-emphasis, var(--fgColor-attention));
+}
+
+.worklogs-team--row:hover .worklogs-team--person,
+.worklogs-team--detail-row:hover .worklogs-team--person {
+  background: var(--bgColor-muted);
+}
+
+.worklogs-team--row:hover td {
+  background-color: color-mix(in srgb, var(--bgColor-muted) 60%, transparent);
+}
+
+/* An opened-up person's work, one line each. Quieter than the person's own
+   row on purpose: it is detail under a heading, not a second table. */
+.worklogs-team--detail-row td,
+.worklogs-team--detail-row th {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-team--table .worklogs-team--person.-detail {
+  padding-left: var(--base-size-40, 40px);
+}
+
+.worklogs-team--detail-main {
+  display: flex;
+  align-items: baseline;
+  gap: var(--base-size-6, 6px);
+  min-width: 0;
+}
+
+.worklogs-team--detail-activity {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-team--number {
+  text-align: right;
+}
+
+.worklogs-team--number.-total {
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-team--number.-over {
+  color: var(--fgColor-success);
+}
+
+.worklogs-team--number.-under {
+  color: var(--fgColor-danger);
+}
+
+.worklogs-team--number.-level {
+  color: var(--fgColor-muted);
+}
+
+.worklogs-team--table tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+}
+
+.worklogs-team--table tfoot th,
+.worklogs-team--table tfoot td {
+  background: var(--bgColor-muted);
+  border-bottom: none;
+  font-weight: var(--base-text-weight-semibold, 600);
+}

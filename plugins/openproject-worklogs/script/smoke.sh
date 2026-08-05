@@ -63,6 +63,7 @@ echo
 echo "Pages"
 check "the timesheet renders"        200 "$(status /worklogs)"
 check "the reports page renders"     200 "$(status /worklogs/reports)"
+check "the team sheet renders"       200 "$(status /worklogs/team)"
 check "the coverage page renders"    200 "$(status /worklogs/coverage)"
 check "the approvals queue renders"  200 "$(status /worklogs/approvals)"
 check "the settings page renders"    200 "$(status /admin/worklogs)"
@@ -80,6 +81,10 @@ check "an anchored quarter report renders" 200 "$(status '/worklogs/reports?peri
 check "the new filters are accepted"  200 "$(status '/worklogs/reports?assignee_ids%5B%5D=0&priority_ids%5B%5D=1&version_ids%5B%5D=1&work_package_ids%5B%5D=1&text=invoice')"
 check "grouping by assignee renders" 200 "$(status '/worklogs/reports?rows%5B%5D=assignee&columns=month')"
 check "an anchored coverage period renders" 200 "$(status '/worklogs/coverage?period=month&from=2026-01-01')"
+check "the team sheet takes a month"  200 "$(status '/worklogs/team?span=month')"
+check "the team sheet lists everyone" 200 "$(status '/worklogs/team?scope=everyone&sort=hours')"
+check "a person can be opened up"     200 "$(status '/worklogs/team?expand%5B%5D=1&expand%5B%5D=2')"
+check "the team sheet takes filters"  200 "$(status '/worklogs/team?user_ids%5B%5D=1&project_ids%5B%5D=1&activity_ids%5B%5D=1')"
 
 # The month view is the one page where a column per day could quietly collapse
 # back to seven, and a status code would not say so.
@@ -90,6 +95,15 @@ if grep -q 'worklogs-grid -month' <<<"$MONTH_BODY" && grep -q 'worklogs-grid--we
 else
   FAILED=$((FAILED + 1))
   echo "  FAIL  the month grid is drawn a month wide"
+fi
+
+TEAM_BODY="$(body '/worklogs/team?scope=everyone')"
+if grep -q 'worklogs-team--table' <<<"$TEAM_BODY" && grep -q 'worklogs-team--toggle' <<<"$TEAM_BODY"; then
+  PASSED=$((PASSED + 1))
+  echo "  ok    the team sheet draws a person per row"
+else
+  FAILED=$((FAILED + 1))
+  echo "  FAIL  the team sheet draws a person per row"
 fi
 
 if grep -q 'worklogs-stepper--arrow' <<<"$(body /worklogs/reports)"; then
@@ -103,6 +117,7 @@ fi
 echo
 echo "Exports"
 check "the coverage CSV downloads"   200 "$(status '/worklogs/coverage?format=csv')"
+check "the team CSV downloads"       200 "$(status '/worklogs/team?format=csv')"
 check "the report CSV downloads"     200 "$(status '/worklogs/reports?format=csv')"
 check "the report workbook downloads" 200 "$(status '/worklogs/reports?format=xls')"
 check "the report PDF downloads"     200 "$(status '/worklogs/reports?format=pdf')"

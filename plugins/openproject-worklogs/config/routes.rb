@@ -20,6 +20,11 @@ Rails.application.routes.draw do
       end
     end
 
+    # Everybody's week or month at once, one line per person. Singular for the
+    # same reason coverage is: one table, and which slice of it you are looking
+    # at is in the query string.
+    get "team", to: "team#index", as: :team
+
     # Who logged their hours and who did not. Singular: there is one table,
     # and which slice of it you are looking at is in the query string.
     get "coverage", to: "coverage#index", as: :coverage

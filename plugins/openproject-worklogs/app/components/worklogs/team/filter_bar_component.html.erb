@@ -1,0 +1,104 @@
+<%= component_wrapper do %>
+  <div class="worklogs-controls" data-worklogs-controls>
+    <div class="worklogs-controls--group">
+      <%# Who, and which of their work ----------------------------------------- %>
+      <% filters.each do |filter| %>
+        <details class="worklogs-drop" data-worklogs-drop>
+          <summary class="worklogs-drop--chip <%= "-active" if selected_ids(filter).any? %>">
+            <span class="worklogs-drop--label"><%= filter.label %></span>
+            <span class="worklogs-drop--value"><%= chip_value(filter) %></span>
+          </summary>
+          <div class="worklogs-drop--panel">
+            <form method="get" action="<%= worklogs_team_path %>">
+              <%= worklogs_team_hidden_fields(query, except: :"#{filter.name}_ids") %>
+              <% if filter.options.size > 8 %>
+                <input type="search" class="worklogs-drop--search" data-worklogs-drop-search
+                       placeholder="<%= t('worklogs.reports.search_placeholder') %>"
+                       aria-label="<%= t('worklogs.reports.search_placeholder') %>">
+              <% end %>
+              <% if filter.options.empty? %>
+                <p class="worklogs-drop--empty"><%= t("worklogs.reports.no_options") %></p>
+              <% else %>
+                <ul class="worklogs-drop--options">
+                  <% filter.options.each do |option| %>
+                    <li data-worklogs-drop-item="<%= option.label.to_s.downcase %>">
+                      <label class="worklogs-drop--option">
+                        <input type="checkbox" name="<%= filter.name %>_ids[]" value="<%= option.id %>"
+                               <%= "checked" if selected_ids(filter).include?(option.id) %>>
+                        <span><%= option.label %></span>
+                      </label>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+              <div class="worklogs-drop--actions">
+                <button type="submit" class="worklogs-button -primary"><%= t("worklogs.reports.apply") %></button>
+                <% if selected_ids(filter).any? %>
+                  <a class="worklogs-button" href="<%= clear_href(filter) %>"><%= t("worklogs.reports.clear") %></a>
+                <% end %>
+              </div>
+            </form>
+          </div>
+        </details>
+      <% end %>
+
+      <%# Everybody, or only the people with something on the sheet ------------- %>
+      <details class="worklogs-drop" data-worklogs-drop>
+        <summary class="worklogs-drop--chip <%= "-active" if query.everyone? %>">
+          <span class="worklogs-drop--label"><%= t("worklogs.team.people") %></span>
+          <span class="worklogs-drop--value"><%= t("worklogs.team.scopes.#{query.scope}") %></span>
+        </summary>
+        <div class="worklogs-drop--panel">
+          <ul class="worklogs-drop--options">
+            <% scopes.each do |scope| %>
+              <li>
+                <a class="worklogs-drop--link <%= "-selected" if scope_selected?(scope) %>"
+                   href="<%= scope_href(scope) %>">
+                  <span><%= t("worklogs.team.scopes.#{scope}") %></span>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </details>
+
+      <%# Ordered by name, or by who logged the most --------------------------- %>
+      <details class="worklogs-drop" data-worklogs-drop>
+        <summary class="worklogs-drop--chip <%= "-active" if query.by_hours? %>">
+          <span class="worklogs-drop--label"><%= t("worklogs.team.sort") %></span>
+          <span class="worklogs-drop--value"><%= t("worklogs.team.sorts.#{query.sort}") %></span>
+        </summary>
+        <div class="worklogs-drop--panel">
+          <ul class="worklogs-drop--options">
+            <% sorts.each do |sort| %>
+              <li>
+                <a class="worklogs-drop--link <%= "-selected" if sort_selected?(sort) %>"
+                   href="<%= sort_href(sort) %>">
+                  <span><%= t("worklogs.team.sorts.#{sort}") %></span>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </details>
+
+      <% if filtered? %>
+        <a class="worklogs-controls--clear" href="<%= clear_all_href %>">
+          <%= t("worklogs.reports.clear_all", count: filter_count) %>
+        </a>
+      <% end %>
+    </div>
+
+    <div class="worklogs-controls--group -end">
+      <div class="worklogs-segmented" role="group" aria-label="<%= t('worklogs.timesheet.span') %>">
+        <% spans.each do |kind| %>
+          <a class="worklogs-segmented--item <%= "-selected" if span_selected?(kind) %>"
+             href="<%= span_href(kind) %>"
+             <%= 'aria-current="true"'.html_safe if span_selected?(kind) %>>
+            <%= t("worklogs.timesheet.spans.#{kind}") %>
+          </a>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

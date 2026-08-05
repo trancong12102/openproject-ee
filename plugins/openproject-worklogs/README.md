@@ -28,6 +28,12 @@ column per day, every cell editable in place.
 - Anything a bare number cannot express — comment, activity, start and end time —
   opens OpenProject's own time entry dialog rather than a second implementation
   of it.
+- **`/worklogs/team`** — everybody at once: one line per person, one column per
+  day, for a week or a month. Any person can be opened up in place to show what
+  they actually worked on, every figure links into their own sheet, and the
+  footer adds the team up day by day. Filter by person, project or activity;
+  order by name or by who logged the most; show only the people with time on the
+  sheet, or everyone who was expected to log some. Exports as CSV.
 - **`/worklogs/reports`** — a pivot over the same time entries: rows grouped up
   to two levels deep by user, project, work package, type, status, activity,
   assignee, priority, version or a time bucket (day, week, month, quarter,
@@ -121,6 +127,36 @@ the week you were on, and the week containing the 1st — or *today's* week, whe
 the month is this one. Anything unrecognised in `?span=` is a week: the URL is
 user-editable, and the right answer to a typo is the ordinary view.
 
+## Four pages, four questions
+
+They look alike on purpose and they are not interchangeable:
+
+| Page | The question | Starts from |
+| --- | --- | --- |
+| Timesheet | What did *I* do this week? | one person's entries |
+| Team | What is everybody working on? | the people, one line each |
+| Reports | Where did the time go? | the entries, grouped |
+| Coverage | Who is behind? | the people, one line each |
+
+Team and coverage both start from the people rather than from the entries,
+which is what lets either of them show the person who logged nothing — the row
+a report can never contain. They differ in what they measure: the team sheet is
+about the work (hours per day, opened up into work packages), coverage is about
+the gap (owed, missing, utilisation, per week or month).
+
+The team sheet is **read-only**, deliberately. Editing somebody else's hours
+from a list of forty people is a way to get it wrong quietly; every figure is a
+link into the sheet where that time can be seen in full and changed on purpose.
+Opening a person up is a link too (`expand[]=<id>`), so it lands in the URL with
+everything else and can be sent to a colleague as "look at this".
+
+Two figures per person, for the same reason the personal stats strip has two:
+**capacity** is the whole span, **owed** is only the part that has already
+happened, and the balance is measured against the second. A page that calls
+everybody 32 hours short every Monday is a page nobody opens twice. A dot marks
+an empty working day that has already passed — never a weekend, a holiday, that
+person's own day off, or tomorrow.
+
 ## Submitting a week
 
 A week has five states: open, waiting for approval, approved, sent back and
@@ -185,12 +221,16 @@ Three global permissions, deliberately separate, granted through a global role
 | Permission | Gives |
 | --- | --- |
 | `view_worklogs` | The timesheet and the reports. Keeping your own hours. |
-| `view_worklogs_coverage` | The coverage page — who on the team is behind. |
+| `view_worklogs_coverage` | The team sheet and the coverage page — everybody at once. |
 | `approve_worklogs` | The approvals queue: approving, rejecting, reopening. |
 
-Coverage is split off from `view_worklogs` because looking at everybody's gaps is
-a manager's act, not part of filling in your own week. It is not a way to see
-anything new either way: hours are still read through `TimeEntry.visible(viewer)`.
+The team-wide pages are split off from `view_worklogs` because looking at
+everybody is a manager's act, not part of filling in your own week. They are not
+a way to see anything new either way: hours on both are read through
+`TimeEntry.visible(viewer)`, so a person with the permission and no project
+access still sees nothing but zeroes. Both pages share the one permission rather
+than adding a fourth, because they are the same act asked two ways — the day
+they are granted separately is the day somebody has to explain the difference.
 
 *Administration → Worklogs* holds the instance-wide switches, stored in the one
 `Setting.plugin_openproject_worklogs` hash and read through `Worklogs::Settings`,
@@ -225,14 +265,15 @@ docker compose exec web bin/rails runner \
   plugins/openproject-worklogs/script/verify.rb
 ```
 
-72 checks: that every constant still resolves, that the three permissions and
+83 checks: that every constant still resolves, that the three permissions and
 both menus registered, that every routed action is covered by a permission, that
 core's `TimeEntries` contracts still call our lock validation on update, delete
 and both directions of a move, that periods step and anchor, that a month's weeks
 cover it end to end and lock a day at a time, that every report filter reaches
 SQL and that a typed `%` is a character rather than a wildcard, that settings
-round-trip and cast, that the reminder job is on the cron table hourly, and that
-en and vi agree key for key. It writes inside a transaction and rolls back, so it
+round-trip and cast, that the team sheet measures a balance against what was
+owed by today and cannot be widened past `TimeEntry.visible`, that the reminder
+job is on the cron table hourly, and that en and vi agree key for key. It writes inside a transaction and rolls back, so it
 is safe against real data.
 
 **From the outside**, over HTTP:
@@ -241,8 +282,8 @@ is safe against real data.
 plugins/openproject-worklogs/script/smoke.sh http://localhost:8080 admin '<password>'
 ```
 
-28 checks: every page renders, the month sheet draws its week seams, all four
-export formats download, an anchored period and every new filter answer, a
+35 checks: every page renders, the month sheet draws its week seams, the team
+sheet draws a person per row and opens one up, all five export formats download, an anchored period and every new filter answer, a
 nonsense span falls back instead of erroring, the fingerprinted asset is served
 and a stale digest is refused, the homescreen block is there, and the timesheet
 is not public.
@@ -366,6 +407,14 @@ parsing, keyboard movement and autosave on top.
 - A saved report stores parameters, never rows. That is what makes sharing one
   safe, and it is why `SavedReport#query_params` holds `period: "this_month"`
   rather than the dates it resolved to on the day it was saved.
+- The team sheet is two queries wide, not two per person: all the hours in one
+  `group(:user_id, :spent_on).sum(:hours)`, all the capacity through
+  `CapacityCalendar`, and one more query only if somebody has been opened up —
+  however many of them are. The expansion cap exists for the markup, not the
+  SQL: five people opened on a month is a hundred and fifty extra cells.
+- Only a weekend or a public holiday greys out a *column* on the team sheet. A
+  personal absence belongs to one person, so it greys that person's cell and
+  nobody else's — the column is shared and cannot say something true of one row.
 - `CapacityCalendar` loads working days, holidays, per-user schedules and
   absences in four queries for any number of people, and `Capacity` is a
   one-user view onto it. A team-wide quarter would otherwise run two queries per
