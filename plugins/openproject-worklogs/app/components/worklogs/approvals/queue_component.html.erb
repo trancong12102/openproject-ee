@@ -3,7 +3,11 @@
     <p class="worklogs-panel--heading"><%= t("worklogs.approval.pending_heading") %></p>
 
     <% if pending.empty? %>
-      <p class="worklogs-drop--empty"><%= t("worklogs.approval.nothing_pending") %></p>
+      <%= render(Primer::Beta::Blankslate.new(border: false)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: "check-circle") %>
+        <% blankslate.with_heading(tag: :h3).with_content(t("worklogs.approval.nothing_pending")) %>
+        <% blankslate.with_description { t("worklogs.approval.nothing_pending_text") } %>
+      <% end %>
     <% else %>
       <table class="worklogs-queue">
         <thead>

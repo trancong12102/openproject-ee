@@ -1,0 +1,54 @@
+<section class="worklogs-home" aria-labelledby="worklogs-home--title">
+  <header class="worklogs-home--header">
+    <h2 class="worklogs-home--title" id="worklogs-home--title">
+      <%= t("worklogs.home.title") %>
+    </h2>
+    <span class="worklogs-home--week"><%= worklogs_week_range(week) %></span>
+    <% if show_status? %>
+      <span class="worklogs-home--status -<%= status_scheme %>"><%= submission.status_label %></span>
+    <% end %>
+  </header>
+
+  <div class="worklogs-home--figures">
+    <div class="worklogs-home--figure">
+      <span class="worklogs-home--figure-value"><%= worklogs_duration(logged) %></span>
+      <span class="worklogs-home--figure-label">
+        <%= t("worklogs.stats.of_capacity", capacity: worklogs_duration(capacity.total)) %>
+      </span>
+    </div>
+
+    <div class="worklogs-home--figure">
+      <span class="worklogs-home--figure-value -<%= difference_scheme %>"><%= difference_label %></span>
+      <span class="worklogs-home--figure-label">
+        <%= t("worklogs.stats.expected_by_now", hours: worklogs_duration(expected)) %>
+      </span>
+    </div>
+
+    <div class="worklogs-home--figure">
+      <span class="worklogs-home--figure-value -small <%= missing_days.any? ? '-attention' : '-success' %>">
+        <%= missing_label %>
+      </span>
+      <span class="worklogs-home--figure-label"><%= t("worklogs.stats.missing_caption") %></span>
+    </div>
+  </div>
+
+  <%# A bar with no capacity behind it is decoration; a week off does not have
+      a shape to show. %>
+  <% if capacity.total.positive? %>
+    <div class="worklogs-home--bar"
+         role="progressbar"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         aria-valuenow="<%= progress %>"
+         aria-label="<%= t('worklogs.stats.logged') %>">
+      <div class="worklogs-home--bar-fill" style="width: <%= progress %>%"></div>
+    </div>
+  <% end %>
+
+  <div class="worklogs-home--actions">
+    <%= link_to t("worklogs.home.open_timesheet"), worklogs_root_path, class: "worklogs-home--link" %>
+    <% if coverage? %>
+      <%= link_to t("worklogs.coverage.title"), worklogs_coverage_path, class: "worklogs-home--link" %>
+    <% end %>
+  </div>
+</section>

@@ -19,6 +19,9 @@ vi:
       missing: "Chưa log"
       missing_caption: "Ngày làm việc còn trống"
       nothing_missing: "Không thiếu ngày nào"
+    home:
+      title: "Tuần của bạn"
+      open_timesheet: "Mở bảng chấm công"
     reports:
       title: "Báo cáo"
       period: "Khoảng thời gian"
@@ -252,6 +255,7 @@ vi:
       open_approval: "Mở phiếu duyệt"
       pending_heading: "Đang chờ bạn"
       nothing_pending: "Không có tuần nào chờ duyệt."
+      nothing_pending_text: "Không có gì đang chờ bạn. Tuần sẽ xuất hiện ở đây ngay khi có người nộp."
       decided_heading: "Đã xử lý gần đây"
       period: "Kỳ"
       waiting: "Chờ"

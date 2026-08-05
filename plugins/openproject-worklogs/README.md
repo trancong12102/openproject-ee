@@ -107,6 +107,20 @@ who has already submitted it, owed nothing (a full week of holiday), or is
 within a few minutes of their target. A digest of everybody's gaps sent to a
 manager is a report, and there is already a page for that.
 
+## On the home page
+
+The OpenProject homescreen gets a **Your week** block: hours logged against the
+week's capacity, the balance against what was owed *by today*, which working days
+are still empty, and the submission badge if there is one worth showing.
+
+It is a homescreen block rather than a My Page widget on purpose, and not by
+preference: My Page widgets are Angular components in a bundle this image cannot
+rebuild, so a plugin cannot add one at all. `homescreen_after_links` is a real
+server-side view hook, and it answers the question a dashboard exists for.
+
+The block renders only for users with `view_worklogs`, and asks for the
+stylesheet only when it renders, so nobody else's homescreen changes by a byte.
+
 ## Permissions and settings
 
 Three global permissions, deliberately separate, granted through a global role
@@ -192,6 +206,13 @@ parsing, keyboard movement and autosave on top.
 - Everything under `lib/` is eager-loaded, so a file there must define the
   constant its name implies. `settings_defaults.rb` defining `SETTINGS_DEFAULTS`
   is exactly the mismatch that stops the whole application from booting.
+- `public/worklogs.css` contains **no colour literals at all** — every colour is a
+  Primer design token (`--fgColor-*`, `--bgColor-*`, `--borderColor-*`), which is
+  the whole reason dark mode and the high-contrast themes work without a second
+  stylesheet. A hex value added there is a bug in dark mode by construction.
+- English and Vietnamese are kept at exact key parity, interpolations included.
+  A missing key does not fail loudly — it renders the key path into the page — so
+  check both files whenever either changes.
 - Headline figures use `DurationConverter` (`30h 15m`) so the page reads like the
   rest of OpenProject; the grid stays decimal, because its cells are inputs and
   you should see back the number you typed.

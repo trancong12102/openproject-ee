@@ -19,6 +19,9 @@ en:
       missing: "Nothing logged"
       missing_caption: "Working days still empty"
       nothing_missing: "All caught up"
+    home:
+      title: "Your week"
+      open_timesheet: "Open timesheet"
     reports:
       title: "Reports"
       period: "Period"
@@ -252,6 +255,7 @@ en:
       open_approval: "Open approval"
       pending_heading: "Waiting for you"
       nothing_pending: "Nothing waiting for approval."
+      nothing_pending_text: "Nothing is waiting on you. Weeks appear here the moment somebody hands one in."
       decided_heading: "Recently decided"
       period: "Period"
       waiting: "Waiting"

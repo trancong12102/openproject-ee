@@ -1889,3 +1889,138 @@
 .worklogs-stats--value a {
   color: inherit;
 }
+
+/* --------------------------------------------------------------------------
+   Homescreen block
+   --------------------------------------------------------------------------
+   Sits under the homescreen's own link lists, so it borrows their card shape
+   rather than inventing a third one. Narrow on purpose: it is a glance, and
+   anybody who wants more is one link away. */
+
+.worklogs-home {
+  margin-top: var(--base-size-24, 24px);
+  padding: var(--base-size-16, 16px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  max-width: 46rem;
+}
+
+.worklogs-home--header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--base-size-8, 8px);
+  margin-bottom: var(--base-size-12, 12px);
+}
+
+.worklogs-home--title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-home--week {
+  color: var(--fgColor-muted);
+  font-size: 0.8125rem;
+}
+
+.worklogs-home--status {
+  margin-left: auto;
+  padding: 0 var(--base-size-8, 8px);
+  border-radius: var(--borderRadius-full, 999px);
+  font-size: 0.75rem;
+  line-height: 1.5rem;
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-home--status.-accent {
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+}
+
+.worklogs-home--status.-success {
+  background: var(--bgColor-success-muted);
+  color: var(--fgColor-success);
+}
+
+.worklogs-home--status.-attention {
+  background: var(--bgColor-attention-muted);
+  color: var(--fgColor-attention);
+}
+
+.worklogs-home--status.-danger {
+  background: var(--bgColor-danger-muted);
+  color: var(--fgColor-danger);
+}
+
+.worklogs-home--figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--base-size-16, 16px);
+}
+
+.worklogs-home--figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-2, 2px);
+  min-width: 0;
+}
+
+.worklogs-home--figure-value {
+  font-size: 1.25rem;
+  font-weight: var(--base-text-weight-semibold, 600);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* The empty-days figure is a list of weekday names, not a number, and reads
+   badly at the size a number wants. */
+.worklogs-home--figure-value.-small {
+  font-size: 0.9375rem;
+}
+
+.worklogs-home--figure-value.-success {
+  color: var(--fgColor-success);
+}
+
+.worklogs-home--figure-value.-attention {
+  color: var(--fgColor-attention);
+}
+
+.worklogs-home--figure-value.-danger {
+  color: var(--fgColor-danger);
+}
+
+.worklogs-home--figure-value.-muted {
+  color: var(--fgColor-muted);
+}
+
+.worklogs-home--figure-label {
+  font-size: 0.75rem;
+  color: var(--fgColor-muted);
+}
+
+.worklogs-home--bar {
+  margin-top: var(--base-size-12, 12px);
+  height: var(--base-size-6, 6px);
+  border-radius: var(--borderRadius-full, 999px);
+  background: var(--bgColor-neutral-muted);
+  overflow: hidden;
+}
+
+.worklogs-home--bar-fill {
+  height: 100%;
+  background: var(--bgColor-accent-emphasis);
+}
+
+.worklogs-home--actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-16, 16px);
+  margin-top: var(--base-size-12, 12px);
+}
+
+.worklogs-home--link {
+  font-size: 0.8125rem;
+}

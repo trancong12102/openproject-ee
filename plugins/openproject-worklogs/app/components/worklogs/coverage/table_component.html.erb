@@ -5,16 +5,16 @@
         <table class="worklogs-coverage">
           <thead>
             <tr>
-              <th class="worklogs-coverage--name"><%= t("worklogs.reports.dimensions.user") %></th>
+              <th scope="col" class="worklogs-coverage--name"><%= t("worklogs.reports.dimensions.user") %></th>
               <% buckets.each do |bucket| %>
-                <th class="<%= bucket_classes(bucket).join(' ') %>" title="<%= bucket_title(bucket) %>">
+                <th scope="col" class="<%= bucket_classes(bucket).join(' ') %>" title="<%= bucket_title(bucket) %>">
                   <%= bucket_label(bucket) %>
                 </th>
               <% end %>
-              <th class="-number"><%= t("worklogs.coverage.total_logged") %></th>
-              <th class="-number"><%= t("worklogs.coverage.total_expected") %></th>
-              <th class="-number"><%= t("worklogs.coverage.total_missing") %></th>
-              <th class="-number"><%= t("worklogs.coverage.utilization") %></th>
+              <th scope="col" class="-number"><%= t("worklogs.coverage.total_logged") %></th>
+              <th scope="col" class="-number"><%= t("worklogs.coverage.total_expected") %></th>
+              <th scope="col" class="-number"><%= t("worklogs.coverage.total_missing") %></th>
+              <th scope="col" class="-number"><%= t("worklogs.coverage.utilization") %></th>
             </tr>
           </thead>
           <tbody>
