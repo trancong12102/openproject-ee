@@ -624,3 +624,627 @@
   opacity: 0.6;
   pointer-events: none;
 }
+
+/* ============================================================== reports === */
+
+/* Shared shell for the panels a report is made of. */
+.worklogs-panel {
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  padding: var(--base-size-16, 16px);
+  min-width: 0;
+}
+
+.worklogs-panel--heading {
+  margin: 0 0 var(--base-size-12, 12px);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-panel--note {
+  margin: var(--base-size-12, 12px) 0 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+/* Controls ---------------------------------------------------------------- */
+
+.worklogs-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--base-size-8, 8px);
+}
+
+.worklogs-controls--group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-6, 6px);
+}
+
+.worklogs-controls--group.-end {
+  margin-left: auto;
+}
+
+.worklogs-controls--clear {
+  color: var(--fgColor-accent);
+  font-size: var(--text-body-size-small, 12px);
+  padding: 0 var(--base-size-4, 4px);
+}
+
+/* Dropdowns are <details>, so the whole filter bar works before a single line
+   of script runs — which matters on an image with no frontend build to fall
+   back on. The script only adds type-to-search and close-on-outside-click. */
+.worklogs-drop {
+  position: relative;
+}
+
+.worklogs-drop--chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--base-size-4, 4px);
+  padding: var(--base-size-4, 4px) var(--base-size-8, 8px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  font-size: var(--text-body-size-medium, 14px);
+  cursor: pointer;
+  list-style: none;
+  max-width: 320px;
+  white-space: nowrap;
+}
+
+.worklogs-drop--chip::-webkit-details-marker {
+  display: none;
+}
+
+.worklogs-drop--chip:hover {
+  background: var(--bgColor-muted);
+}
+
+.worklogs-drop--chip.-active {
+  border-color: var(--borderColor-accent-emphasis, var(--fgColor-accent));
+  background: var(--bgColor-accent-muted);
+}
+
+.worklogs-drop[open] > .worklogs-drop--chip {
+  border-color: var(--borderColor-accent-emphasis, var(--fgColor-accent));
+}
+
+.worklogs-drop--label {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-drop--value {
+  font-weight: var(--base-text-weight-semibold, 600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.worklogs-drop--panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  min-width: 260px;
+  max-width: 360px;
+  padding: var(--base-size-8, 8px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--overlay-bgColor, var(--bgColor-default));
+  box-shadow: var(--shadow-floating-small, 0 8px 24px rgba(0, 0, 0, 0.15));
+}
+
+.worklogs-drop--panel.-wide {
+  min-width: 320px;
+}
+
+/* The last dropdowns in the bar would otherwise open off the right edge. */
+.worklogs-controls--group.-end .worklogs-drop--panel {
+  left: auto;
+  right: 0;
+}
+
+.worklogs-drop--search,
+.worklogs-drop--dates input,
+.worklogs-drop--field select {
+  width: 100%;
+  padding: var(--base-size-4, 4px) var(--base-size-8, 8px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  color: inherit;
+  font: inherit;
+}
+
+.worklogs-drop--options {
+  list-style: none;
+  margin: var(--base-size-4, 4px) 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.worklogs-drop--option {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-8, 8px);
+  padding: var(--base-size-4, 4px) var(--base-size-6, 6px);
+  border-radius: var(--borderRadius-medium, 6px);
+  cursor: pointer;
+}
+
+.worklogs-drop--option:hover {
+  background: var(--bgColor-muted);
+}
+
+.worklogs-drop--dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--base-size-8, 8px);
+  padding: var(--base-size-8, 8px) var(--base-size-6, 6px) 0;
+  border-top: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+}
+
+.worklogs-drop--dates label,
+.worklogs-drop--field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-2, 2px);
+  font-size: var(--text-body-size-small, 12px);
+  color: var(--fgColor-muted);
+}
+
+.worklogs-drop--field {
+  padding: var(--base-size-4, 4px) var(--base-size-6, 6px);
+}
+
+.worklogs-drop--actions {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-8, 8px);
+  padding: var(--base-size-8, 8px) var(--base-size-6, 6px) var(--base-size-4, 4px);
+  border-top: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+}
+
+.worklogs-drop--empty {
+  margin: 0;
+  padding: var(--base-size-8, 8px) var(--base-size-6, 6px);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+[data-worklogs-drop-item].-hidden {
+  display: none;
+}
+
+.worklogs-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--base-size-4, 4px);
+  padding: var(--base-size-4, 4px) var(--base-size-12, 12px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  font: inherit;
+  font-size: var(--text-body-size-medium, 14px);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.worklogs-button:hover {
+  background: var(--bgColor-muted);
+}
+
+.worklogs-button.-primary {
+  border-color: var(--button-primary-borderColor-rest, var(--borderColor-accent-emphasis));
+  background: var(--button-primary-bgColor-rest, var(--bgColor-accent-emphasis));
+  color: var(--button-primary-fgColor-rest, var(--fgColor-onEmphasis));
+}
+
+.worklogs-button.-primary:hover {
+  background: var(--button-primary-bgColor-hover, var(--bgColor-accent-emphasis));
+}
+
+/* A measure is one of three, not a list to scroll: show all of them. */
+.worklogs-segmented {
+  display: inline-flex;
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  overflow: hidden;
+}
+
+.worklogs-segmented--item {
+  padding: var(--base-size-4, 4px) var(--base-size-12, 12px);
+  background: var(--bgColor-default);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-medium, 14px);
+  border-right: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+}
+
+.worklogs-segmented--item:last-child {
+  border-right: none;
+}
+
+.worklogs-segmented--item:hover {
+  background: var(--bgColor-muted);
+  color: var(--fgColor-default);
+}
+
+.worklogs-segmented--item.-selected {
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+/* Summary ----------------------------------------------------------------- */
+
+.worklogs-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--base-size-16, 16px);
+  padding: var(--base-size-16, 16px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--bgColor-muted, var(--bgColor-default));
+}
+
+.worklogs-summary--headline,
+.worklogs-summary--figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-2, 2px);
+  min-width: 0;
+}
+
+.worklogs-summary--figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-24, 24px);
+  margin-left: auto;
+  padding-left: var(--base-size-24, 24px);
+  border-left: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+}
+
+.worklogs-summary--label {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-summary--value {
+  font-size: var(--text-title-size-large, 26px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.worklogs-summary--figure-value {
+  font-size: var(--text-title-size-medium, 20px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.worklogs-summary--caption {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+/* Charts ------------------------------------------------------------------ */
+
+.worklogs-charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--base-size-16, 16px);
+}
+
+@media (min-width: 1100px) {
+  .worklogs-charts:has(> :nth-child(2)) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.worklogs-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-6, 6px);
+}
+
+.worklogs-bars--row {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--base-size-8, 8px);
+  font-size: var(--text-body-size-medium, 14px);
+}
+
+.worklogs-bars--label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.worklogs-bars--track {
+  height: var(--base-size-16, 16px);
+  border-radius: var(--borderRadius-small, 4px);
+  background: var(--bgColor-neutral-muted);
+  overflow: hidden;
+}
+
+.worklogs-bars--bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bgColor-accent-emphasis);
+}
+
+.worklogs-bars--value {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--base-text-weight-semibold, 600);
+  white-space: nowrap;
+}
+
+.worklogs-trend {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--base-size-4, 4px);
+  height: 140px;
+}
+
+.worklogs-trend--column {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--base-size-4, 4px);
+  min-width: 0;
+  height: 100%;
+}
+
+.worklogs-trend--track {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Capped: with only two or three periods, full-width bars stop reading as a
+   chart and start reading as a colour field. */
+.worklogs-trend--bar {
+  width: 100%;
+  max-width: 64px;
+  margin: 0 auto;
+  min-height: 2px;
+  border-radius: var(--borderRadius-small, 4px) var(--borderRadius-small, 4px) 0 0;
+  background: var(--bgColor-accent-emphasis);
+}
+
+.worklogs-trend--label {
+  flex: none;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.worklogs-trend--label.-hidden {
+  visibility: hidden;
+}
+
+/* Pivot ------------------------------------------------------------------- */
+
+.worklogs-pivot {
+  padding: 0;
+}
+
+.worklogs-pivot--scroller {
+  overflow-x: auto;
+  border-radius: var(--borderRadius-medium, 6px);
+}
+
+.worklogs-pivot--table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-body-size-medium, 14px);
+}
+
+.worklogs-pivot--table th,
+.worklogs-pivot--table td {
+  padding: var(--base-size-6, 6px) var(--base-size-12, 12px);
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.worklogs-pivot--table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bgColor-muted);
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.worklogs-pivot--table .worklogs-pivot--head {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 34%;
+  min-width: 220px;
+  max-width: 420px;
+  background: var(--bgColor-default);
+  text-align: left;
+  font-weight: var(--base-text-weight-normal, 400);
+  white-space: normal;
+}
+
+.worklogs-pivot--table thead .worklogs-pivot--head {
+  z-index: 3;
+  background: var(--bgColor-muted);
+}
+
+.worklogs-pivot--label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.worklogs-pivot--caption {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-pivot--label span,
+.worklogs-pivot--link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Level one is the spine of the report; level two hangs off it. */
+.worklogs-pivot--table .worklogs-pivot--row.-level-1 > .worklogs-pivot--head {
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-pivot--table .worklogs-pivot--row.-level-2 > .worklogs-pivot--head {
+  padding-left: var(--base-size-32, 32px);
+  color: var(--fgColor-muted);
+}
+
+.worklogs-pivot--row.-level-2 > .worklogs-pivot--head::before {
+  content: "";
+  position: absolute;
+  left: var(--base-size-20, 20px);
+  top: 0;
+  bottom: 0;
+  border-left: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+}
+
+.worklogs-pivot--row:hover th,
+.worklogs-pivot--row:hover td {
+  background: var(--bgColor-muted);
+}
+
+.worklogs-pivot--value {
+  color: inherit;
+}
+
+.worklogs-pivot--value:hover {
+  color: var(--fgColor-accent);
+  text-decoration: underline;
+}
+
+.worklogs-pivot--row-total {
+  font-weight: var(--base-text-weight-semibold, 600);
+  border-left: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+}
+
+/* Shading turns a wide pivot into something readable at a glance: where the
+   time went is a shape before it is a set of numbers. */
+.worklogs-pivot--cell[data-heat="1"] { background: color-mix(in srgb, var(--bgColor-accent-emphasis) 6%, transparent); }
+.worklogs-pivot--cell[data-heat="2"] { background: color-mix(in srgb, var(--bgColor-accent-emphasis) 12%, transparent); }
+.worklogs-pivot--cell[data-heat="3"] { background: color-mix(in srgb, var(--bgColor-accent-emphasis) 20%, transparent); }
+.worklogs-pivot--cell[data-heat="4"] { background: color-mix(in srgb, var(--bgColor-accent-emphasis) 28%, transparent); }
+.worklogs-pivot--cell[data-heat="5"] { background: color-mix(in srgb, var(--bgColor-accent-emphasis) 36%, transparent); }
+
+.worklogs-pivot--empty::before {
+  content: "·";
+  color: var(--fgColor-muted);
+}
+
+.worklogs-pivot--table tfoot th,
+.worklogs-pivot--table tfoot td {
+  position: sticky;
+  bottom: 0;
+  background: var(--bgColor-muted);
+  border-top: var(--borderWidth-thin, 1px) solid var(--borderColor-default);
+  border-bottom: none;
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+
+.worklogs-pivot--table tfoot th {
+  left: 0;
+  z-index: 2;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--text-body-size-small, 12px);
+  color: var(--fgColor-muted);
+}
+
+/* Drill-down -------------------------------------------------------------- */
+
+.worklogs-entries {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-body-size-medium, 14px);
+}
+
+.worklogs-entries th,
+.worklogs-entries td {
+  padding: var(--base-size-6, 6px) var(--base-size-8, 8px);
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-muted);
+  text-align: left;
+  vertical-align: top;
+}
+
+.worklogs-entries thead th {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.worklogs-entries .-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.worklogs-entries .-nowrap {
+  white-space: nowrap;
+}
+
+.worklogs-entries--reference {
+  display: block;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}
+
+.worklogs-entries--comment {
+  color: var(--fgColor-muted);
+  max-width: 24rem;
+}
+
+.worklogs-entries--note,
+.worklogs-entries--empty {
+  margin: var(--base-size-12, 12px) 0 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small, 12px);
+}

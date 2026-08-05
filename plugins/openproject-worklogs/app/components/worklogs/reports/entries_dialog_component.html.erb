@@ -1,0 +1,54 @@
+<%= component_wrapper do %>
+  <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title:, subtitle:, size: :xlarge)) do |dialog| %>
+    <% dialog.with_header(variant: :large) %>
+    <% dialog.with_body do %>
+      <% if visible_entries.empty? %>
+        <p class="worklogs-entries--empty"><%= t("worklogs.reports.no_entries") %></p>
+      <% else %>
+        <table class="worklogs-entries">
+          <thead>
+            <tr>
+              <th scope="col"><%= TimeEntry.human_attribute_name(:spent_on) %></th>
+              <th scope="col"><%= TimeEntry.human_attribute_name(:user) %></th>
+              <th scope="col"><%= t("worklogs.reports.dimensions.entity") %></th>
+              <th scope="col"><%= TimeEntry.human_attribute_name(:activity) %></th>
+              <th scope="col"><%= TimeEntry.human_attribute_name(:comments) %></th>
+              <th scope="col" class="-numeric"><%= TimeEntry.human_attribute_name(:hours) %></th>
+              <% if costs_visible %>
+                <th scope="col" class="-numeric"><%= t("worklogs.reports.measures.costs") %></th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% visible_entries.each do |entry| %>
+              <tr>
+                <td class="-nowrap"><%= I18n.l(entry.spent_on, format: :long) %></td>
+                <td class="-nowrap"><%= entry.user&.name %></td>
+                <td>
+                  <% if entry_reference(entry) %>
+                    <span class="worklogs-entries--reference"><%= entry_reference(entry) %></span>
+                  <% end %>
+                  <% if entry_path(entry) %>
+                    <%= link_to entry_subject(entry), entry_path(entry) %>
+                  <% else %>
+                    <%= entry_subject(entry) %>
+                  <% end %>
+                </td>
+                <td class="-nowrap"><%= entry.activity&.name %></td>
+                <td class="worklogs-entries--comment"><%= entry.comments %></td>
+                <td class="-numeric"><%= worklogs_duration(entry.hours) %></td>
+                <% if costs_visible %>
+                  <td class="-numeric"><%= entry_costs(entry) %></td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if truncated? %>
+          <p class="worklogs-entries--note"><%= truncation_note %></p>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

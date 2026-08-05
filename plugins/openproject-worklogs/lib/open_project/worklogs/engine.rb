@@ -24,7 +24,8 @@ module OpenProject
                      {
                        "worklogs/timesheets": %i[index grid],
                        "worklogs/cells": %i[create],
-                       "worklogs/rows": %i[new create destroy copy_previous]
+                       "worklogs/rows": %i[new create destroy copy_previous],
+                       "worklogs/reports": %i[index entries]
                      },
                      permissible_on: :global,
                      require: :loggedin
@@ -36,6 +37,20 @@ module OpenProject
              caption: :"worklogs.label_worklogs",
              after: :my_time_tracking,
              icon: "table",
+             if: ->(*) { User.current.allowed_globally?(:view_worklogs) }
+
+        menu :global_menu,
+             :worklogs_timesheet,
+             { controller: "/worklogs/timesheets", action: :index },
+             caption: :"worklogs.timesheet.title",
+             parent: :worklogs,
+             if: ->(*) { User.current.allowed_globally?(:view_worklogs) }
+
+        menu :global_menu,
+             :worklogs_reports,
+             { controller: "/worklogs/reports", action: :index },
+             caption: :"worklogs.reports.title",
+             parent: :worklogs,
              if: ->(*) { User.current.allowed_globally?(:view_worklogs) }
       end
     end

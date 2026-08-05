@@ -6,6 +6,13 @@ Rails.application.routes.draw do
     # closes — cheaper and less jarring than reloading the whole page.
     get "grid", to: "timesheets#grid"
 
+    resources :reports, only: %i[index] do
+      collection do
+        # The entries behind one figure in the pivot.
+        get :entries
+      end
+    end
+
     resources :cells, only: %i[create]
 
     resources :rows, only: %i[new create destroy] do

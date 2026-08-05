@@ -464,11 +464,56 @@
     console.warn("[worklogs]", message);
   }
 
+  /* ------------------------------------------------------------- dropdowns */
+
+  // The report's filter dropdowns are <details> elements and already work
+  // without any of this: open, tick, Apply. All that is added here is what a
+  // pointer user expects on top — type-to-narrow, and closing when you click
+  // somewhere else or press Escape.
+  function bindDropdown(details) {
+    var search = details.querySelector("[data-worklogs-drop-search]");
+    if (!search) return;
+
+    search.addEventListener("input", function () {
+      var needle = search.value.trim().toLowerCase();
+
+      Array.prototype.forEach.call(details.querySelectorAll("[data-worklogs-drop-item]"), function (item) {
+        var haystack = item.dataset.worklogsDropItem || "";
+        item.classList.toggle("-hidden", needle !== "" && haystack.indexOf(needle) === -1);
+      });
+    });
+
+    details.addEventListener("toggle", function () {
+      if (details.open) window.setTimeout(function () { search.focus(); }, 0);
+    });
+  }
+
+  function closeDropdowns(except) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-worklogs-drop][open]"), function (details) {
+      if (details !== except) details.open = false;
+    });
+  }
+
+  document.addEventListener("click", function (event) {
+    var inside = event.target.closest ? event.target.closest("[data-worklogs-drop]") : null;
+    closeDropdowns(inside);
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") closeDropdowns(null);
+  });
+
   function init() {
     Array.prototype.forEach.call(document.querySelectorAll(SELECTOR), function (root) {
       if (root.dataset.worklogsBound === "1") return;
       root.dataset.worklogsBound = "1";
       new Grid(root);
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-worklogs-drop]"), function (details) {
+      if (details.dataset.worklogsBound === "1") return;
+      details.dataset.worklogsBound = "1";
+      bindDropdown(details);
     });
   }
 

@@ -7,7 +7,7 @@ module Worklogs
 
     before_action :load_week, :load_user
 
-    menu_item :worklogs
+    menu_item :worklogs_timesheet
 
     layout "global"
 

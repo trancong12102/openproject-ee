@@ -1,0 +1,19 @@
+<%= component_wrapper do %>
+  <div class="worklogs-summary">
+    <div class="worklogs-summary--headline">
+      <span class="worklogs-summary--label"><%= headline_label %></span>
+      <span class="worklogs-summary--value"><%= headline %></span>
+      <span class="worklogs-summary--caption"><%= period_caption %></span>
+    </div>
+
+    <div class="worklogs-summary--figures">
+      <% figures.each do |figure| %>
+        <div class="worklogs-summary--figure">
+          <span class="worklogs-summary--label"><%= figure.label %></span>
+          <span class="worklogs-summary--figure-value"><%= figure.value %></span>
+          <span class="worklogs-summary--caption"><%= figure.caption %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

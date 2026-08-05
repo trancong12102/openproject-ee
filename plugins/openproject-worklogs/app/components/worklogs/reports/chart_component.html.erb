@@ -1,0 +1,47 @@
+<%= component_wrapper do %>
+  <div class="worklogs-charts">
+    <section class="worklogs-panel">
+      <h2 class="worklogs-panel--heading"><%= chart_heading %></h2>
+
+      <%# aria-hidden: every number here is in the table below, correctly
+          labelled and navigable. Repeating it as a hundred unlabelled boxes
+          would make the page longer to hear, not more informative. %>
+      <div class="worklogs-bars" aria-hidden="true">
+        <% top_nodes.each do |node| %>
+          <div class="worklogs-bars--row" title="<%= row_title(node) %>">
+            <span class="worklogs-bars--label"><%= node.label.text %></span>
+            <span class="worklogs-bars--track">
+              <span class="worklogs-bars--bar" style="width: <%= share(node) %>%"></span>
+            </span>
+            <span class="worklogs-bars--value"><%= value(node) %></span>
+          </div>
+        <% end %>
+      </div>
+
+      <% if remaining_nodes.positive? %>
+        <p class="worklogs-panel--note"><%= t("worklogs.reports.and_more", count: remaining_nodes) %></p>
+      <% end %>
+    </section>
+
+    <% if trend? %>
+      <section class="worklogs-panel">
+        <h2 class="worklogs-panel--heading">
+          <%= t("worklogs.reports.trend", dimension: query.column_dimension.label.downcase) %>
+        </h2>
+
+        <div class="worklogs-trend" aria-hidden="true">
+          <% trend_columns.each_with_index do |column, index| %>
+            <div class="worklogs-trend--column" title="<%= trend_title(column) %>">
+              <span class="worklogs-trend--track">
+                <span class="worklogs-trend--bar" style="height: <%= trend_share(column) %>%"></span>
+              </span>
+              <span class="worklogs-trend--label <%= "-hidden" unless show_trend_label?(index) %>">
+                <%= trend_label(column) %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </div>
+<% end %>

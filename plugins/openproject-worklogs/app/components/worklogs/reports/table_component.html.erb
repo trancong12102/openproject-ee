@@ -1,0 +1,88 @@
+<%= component_wrapper do %>
+  <section class="worklogs-panel worklogs-pivot">
+    <% if result.empty? %>
+      <%= render(Primer::Beta::Blankslate.new(border: false)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: "graph") %>
+        <% blankslate.with_heading(tag: :h3).with_content(t("worklogs.reports.blank_heading")) %>
+        <% blankslate.with_description { t("worklogs.reports.blank_description") } %>
+      <% end %>
+    <% else %>
+      <div class="worklogs-pivot--scroller">
+        <table class="worklogs-pivot--table">
+          <thead>
+            <tr>
+              <th scope="col" class="worklogs-pivot--head"><%= dates_label %></th>
+              <% columns.each do |column| %>
+                <th scope="col" class="worklogs-pivot--column"><%= column.label.text %></th>
+              <% end %>
+              <th scope="col" class="worklogs-pivot--total-head"><%= t("worklogs.reports.total") %></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% result.nodes.flat_map { |node| [[node, 1]] + node.children.map { |child| [child, 2] } }.each do |node, level| %>
+              <tr class="<%= row_classes(node, level).join(' ') %>">
+                <th scope="row" class="worklogs-pivot--head">
+                  <span class="worklogs-pivot--label">
+                    <% if node.label.caption %>
+                      <span class="worklogs-pivot--caption"><%= node.label.caption %></span>
+                    <% end %>
+                    <% if node.label.href %>
+                      <%= link_to node.label.text, node.label.href, class: "worklogs-pivot--link", title: node.label.text %>
+                    <% else %>
+                      <span title="<%= node.label.text %>"><%= node.label.text %></span>
+                    <% end %>
+                  </span>
+                </th>
+
+                <% columns.each do |column| %>
+                  <td class="worklogs-pivot--cell" <%= tag.attributes(data: { heat: heat_step(node, column) }.compact) %>>
+                    <% if cell(node, column).to_f.zero? %>
+                      <span class="worklogs-pivot--empty"></span>
+                    <% else %>
+                      <%= link_to formatted(cell(node, column)),
+                                  drill_down_path(node, column),
+                                  class: "worklogs-pivot--value",
+                                  title: drill_down_label(node, column),
+                                  data: { "turbo-stream": true } %>
+                    <% end %>
+                  </td>
+                <% end %>
+
+                <td class="worklogs-pivot--row-total">
+                  <%= link_to formatted_total(node.total),
+                              drill_down_path(node),
+                              class: "worklogs-pivot--value",
+                              title: drill_down_label(node),
+                              data: { "turbo-stream": true } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+
+          <tfoot>
+            <tr class="worklogs-pivot--totals">
+              <th scope="row"><%= t("worklogs.reports.total") %></th>
+              <% columns.each do |column| %>
+                <td><%= formatted_total(column_total(column)) %></td>
+              <% end %>
+              <td class="worklogs-pivot--grand"><%= formatted_total(result.grand_total) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <% if result.truncated_rows.positive? || result.truncated_columns.positive? %>
+        <p class="worklogs-panel--note">
+          <%# Say what was cut. A silently truncated report reads as a complete one. %>
+          <% if result.truncated_rows.positive? %>
+            <%= t("worklogs.reports.truncated_rows", count: result.truncated_rows) %>
+          <% end %>
+          <% if result.truncated_columns.positive? %>
+            <%= t("worklogs.reports.truncated_columns", count: result.truncated_columns) %>
+          <% end %>
+        </p>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>
