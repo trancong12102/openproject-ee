@@ -262,7 +262,11 @@
 
 /* Row header (sticky first column) ---------------------------------------- */
 
-.worklogs-grid--row-head {
+/* Qualified by the table on purpose. The `th, td { padding: 0 }` reset above —
+   which the cells need, because an input fills its cell edge to edge — is a
+   class *and* an element, and would otherwise outrank a bare class here and
+   leave every row title pinned against the border. */
+.worklogs-grid--table .worklogs-grid--row-head {
   position: sticky;
   left: 0;
   z-index: 2;
