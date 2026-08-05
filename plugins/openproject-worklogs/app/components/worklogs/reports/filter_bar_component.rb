@@ -131,10 +131,11 @@ module Worklogs
 
       Export = Struct.new(:label, :caption, :href, keyword_init: true)
 
-      # Two shapes, three formats. The pivot for reading and for filing; every
+      # Two shapes, four formats. The pivot for reading and for filing; every
       # entry for the person who has to reconcile it against an invoice.
       def pivot_exports
         [
+          export(:xlsx, "xlsx", false),
           export(:csv, "csv", false),
           export(:xls, "xls", false),
           export(:pdf, "pdf", false)
@@ -143,6 +144,7 @@ module Worklogs
 
       def detail_exports
         [
+          export(:detail_xlsx, "xlsx", true),
           export(:detail_csv, "csv", true),
           export(:detail_xls, "xls", true)
         ]

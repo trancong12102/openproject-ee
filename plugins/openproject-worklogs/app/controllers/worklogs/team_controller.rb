@@ -28,6 +28,12 @@ module Worklogs
                     filename: "#{export_filename}.csv",
                     disposition: "attachment")
         end
+        format.xlsx do
+          send_data(Team::XlsxExport.new(sheet: @sheet).to_xlsx,
+                    type: Xlsx::Workbook::CONTENT_TYPE,
+                    filename: "#{export_filename}.xlsx",
+                    disposition: "attachment")
+        end
       end
     end
 

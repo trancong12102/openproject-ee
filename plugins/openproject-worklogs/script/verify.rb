@@ -661,6 +661,142 @@ run.group("Team sheet") do
   end
 end
 
+# The .xlsx writer is this plugin's own, so nothing else is going to notice when
+# it emits a file no spreadsheet will open. These checks are that noticing.
+run.group("Workbooks") do
+  require "zip"
+
+  viewer = User.active.not_builtin.first || User.anonymous
+  # `open_buffer` hands back the buffer, not the block's value.
+  parts = lambda do |data|
+    entries = nil
+    Zip::File.open_buffer(data) { |zip| entries = zip.entries.to_h { |e| [e.name, zip.read(e.name)] } }
+    entries
+  end
+
+  workbook = Worklogs::Xlsx::Workbook.new do |book|
+    book.sheet("Hours") do |sheet|
+      sheet.format_columns(:hours, from: 1)
+      sheet.title("Title")
+      sheet.header(%w[Who Hours])
+      sheet.row(["Ann & <Bob>", 7.5])
+      sheet.total(["Total", 7.5])
+    end
+  end
+  files = parts.call(workbook.to_xlsx)
+
+  run.check("a workbook is a zip carrying every part a reader opens") do
+    %w[[Content_Types].xml _rels/.rels xl/workbook.xml xl/_rels/workbook.xml.rels
+       xl/styles.xml xl/worksheets/sheet1.xml].all? { |name| files.key?(name) }
+  end
+
+  run.check("every part parses as XML") do
+    files.values.all? { |content| Nokogiri::XML(content) { |config| config.strict }.errors.empty? }
+  end
+
+  # The whole point of the format over a CSV: a figure Excel will re-sum.
+  run.check("figures go out as numbers, text goes out as text") do
+    sheet = Nokogiri::XML(files["xl/worksheets/sheet1.xml"])
+    hours = sheet.at_css(%(c[r="B3"]))
+    who = sheet.at_css(%(c[r="A3"]))
+
+    hours.at_css("v")&.text == "7.5" && hours["t"].nil? &&
+      who["t"] == "inlineStr" && who.at_css("t").text == "Ann & <Bob>"
+  end
+
+  run.check("a number carries the format of its column, a word does not") do
+    sheet = Nokogiri::XML(files["xl/worksheets/sheet1.xml"])
+    cells = sheet.css("c").to_h { |cell| [cell["r"], cell["s"].to_i] }
+
+    cells["B3"] == Worklogs::Xlsx::Styles::DECIMAL &&
+      cells["B4"] == Worklogs::Xlsx::Styles::BOLD_DECIMAL &&
+      cells["A3"] == Worklogs::Xlsx::Styles::DEFAULT
+  end
+
+  run.check("the style table declares every style a cell can ask for") do
+    declared = Nokogiri::XML(files["xl/styles.xml"]).css("cellXfs xf").size
+    used = Worklogs::Xlsx::Styles.constants.filter_map do |name|
+      value = Worklogs::Xlsx::Styles.const_get(name)
+      value if value.is_a?(Integer) && name != :CURRENCY_FORMAT_ID
+    end
+
+    used.max < declared && declared == 8
+  end
+
+  # An attribute closed early by a quote is a file that will not open at all,
+  # and the currency sign arrives inside quotes by design.
+  run.check("a currency sign cannot break out of an attribute") do
+    escaped = Worklogs::Xlsx::Cell.escape_attribute(%(#,##0.00 "€"))
+
+    !escaped.include?('"') && escaped.include?("&quot;") &&
+      Nokogiri::XML(%(<a b="#{escaped}"/>)) { |config| config.strict }.errors.empty?
+  end
+
+  run.check("the header freezes itself in place") do
+    files["xl/worksheets/sheet1.xml"].include?(%(state="frozen"))
+  end
+
+  # Excel refuses the whole file rather than telling you the tab is misnamed.
+  run.check("a sheet name Excel would refuse is made safe") do
+    sheet = Worklogs::Xlsx::Sheet.new("Report: 2026/08 [draft] with a very long tail indeed")
+
+    sheet.name.length <= 31 && sheet.name !~ %r{[\[\]:*?/\\]}
+  end
+
+  run.check("column references keep going past Z") do
+    names = [0, 25, 26, 27, 51, 52].map { |index| Worklogs::Xlsx::Cell.column_name(index) }
+
+    names == %w[A Z AA AB AZ BA]
+  end
+
+  # Free text somebody pasted from a chat window is the likeliest thing here to
+  # be unopenable, and it arrives in the comment column of every detail export.
+  run.check("a control character in a comment cannot break the file") do
+    cell = Worklogs::Xlsx::Cell.new(value: "one\u0000two\u0008three", reference: "A1")
+
+    cell.to_xml.include?("onetwothree") &&
+      Nokogiri::XML("<r>#{cell.to_xml}</r>") { |config| config.strict }.errors.empty?
+  end
+
+  run.check("the registered type is the one the writer says it writes") do
+    Mime[:xlsx]&.to_s == Worklogs::Xlsx::Workbook::CONTENT_TYPE
+  end
+
+  # Four pages, one writer. A format that only works on the page it was written
+  # for is a format that breaks on the other three without anybody noticing.
+  run.check("every page that offers a workbook can build one") do
+    team = Worklogs::Team::Sheet.new(query: Worklogs::Team::Query.from_params({}), viewer:)
+    coverage = Worklogs::Coverage::Result.new(query: Worklogs::Coverage::Query.from_params({}), viewer:)
+    report = Worklogs::Reports::Result.new(query: Worklogs::Reports::Query.from_params({}), viewer:)
+
+    [Worklogs::Team::XlsxExport.new(sheet: team).to_xlsx,
+     Worklogs::Coverage::XlsxExport.new(result: coverage).to_xlsx,
+     Worklogs::Reports::XlsxExport.new(result: report).to_xlsx,
+     Worklogs::Reports::XlsxExport.new(result: report, detail: true).to_xlsx]
+      .all? { |data| data.start_with?("PK") && data.bytesize > 1_000 }
+  end
+
+  run.check("the entries behind a report arrive on their own sheet") do
+    report = Worklogs::Reports::Result.new(query: Worklogs::Reports::Query.from_params({}), viewer:)
+    files = parts.call(Worklogs::Reports::XlsxExport.new(result: report, detail: true).to_xlsx)
+    names = Nokogiri::XML(files["xl/workbook.xml"]).css("sheet").map { |sheet| sheet["name"] }
+
+    files.key?("xl/worksheets/sheet2.xml") && names.last == I18n.t("worklogs.reports.detail.sheet")
+  end
+
+  # The workbook and the CSV are written from one table on purpose: two readers
+  # of the same page must not be able to disagree about what is on it.
+  run.check("the workbook and the CSV say the same thing") do
+    sheet = Worklogs::Team::Sheet.new(query: Worklogs::Team::Query.from_params({}), viewer:)
+    header = Worklogs::Team::ExportTable.new(sheet:).header
+    csv_header = CSV.parse_line(Worklogs::Team::CsvExport.new(sheet:).to_csv)
+    files = parts.call(Worklogs::Team::XlsxExport.new(sheet:).to_xlsx)
+    text = Nokogiri::XML(files["xl/worksheets/sheet1.xml"]).css("t").map(&:text)
+
+    csv_header == header && header.all? { |label| text.include?(label) }
+  end
+end
+
 # ---------------------------------------------------------------------------
 # Everything below writes, so it runs inside a transaction that is always rolled
 # back. An instance with real time entries on it is left exactly as it was.

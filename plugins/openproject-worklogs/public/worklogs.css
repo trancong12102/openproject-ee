@@ -1083,14 +1083,22 @@
   font-weight: var(--base-text-weight-semibold, 600);
 }
 
+/* The caption is the part that gives way. Truncating "Excel (.xlsx)" down to
+   "Excel …" to make room for a description of it is the wrong way round. */
 .worklogs-drop--link em {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   color: var(--fgColor-muted);
   font-size: var(--text-body-size-small, 12px);
   font-style: normal;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .worklogs-drop--link span {
+  flex: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

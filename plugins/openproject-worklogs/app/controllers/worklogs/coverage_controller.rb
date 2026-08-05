@@ -26,6 +26,12 @@ module Worklogs
                     filename: "#{export_filename}.csv",
                     disposition: "attachment")
         end
+        format.xlsx do
+          send_data(Coverage::XlsxExport.new(result: @result).to_xlsx,
+                    type: Xlsx::Workbook::CONTENT_TYPE,
+                    filename: "#{export_filename}.xlsx",
+                    disposition: "attachment")
+        end
       end
     end
 

@@ -14,11 +14,16 @@
       <%= I18n.t(:label_today_capitalized) %>
     <% end %>
 
-    <% component.with_action_button(tag: :a,
-                                    href: export_href,
-                                    leading_icon: :download,
-                                    label: t("worklogs.team.export")) do %>
-      <%= t("worklogs.team.export") %>
+    <%# A menu rather than two buttons: which spreadsheet dialect somebody wants
+        is a detail of the same act, and it does not deserve the width. %>
+    <% component.with_action_menu(leading_icon: :download,
+                                  label: t("worklogs.team.export")) do |menu| %>
+      <% menu.with_item(tag: :a, href: export_href(:xlsx), label: t("worklogs.team.export_xlsx")) do |item| %>
+        <% item.with_leading_visual_icon(icon: :table) %>
+      <% end %>
+      <% menu.with_item(tag: :a, href: export_href(:csv), label: t("worklogs.team.export_csv")) do |item| %>
+        <% item.with_leading_visual_icon(icon: :file) %>
+      <% end %>
     <% end %>
   <% end %>
 <% end %>

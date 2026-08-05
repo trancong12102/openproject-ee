@@ -77,8 +77,15 @@ module Worklogs
         worklogs_coverage_href(query, project_ids: [], user_ids: [])
       end
 
-      def export_href
-        worklogs_coverage_export_href(query)
+      Export = Struct.new(:label, :href, keyword_init: true)
+
+      # The workbook first: the coverage table is read as figures, and a CSV of
+      # them is one autocorrected date away from being read as text.
+      def exports
+        [Export.new(label: I18n.t("worklogs.coverage.export_xlsx"),
+                    href: worklogs_coverage_export_href(query, "xlsx")),
+         Export.new(label: I18n.t("worklogs.coverage.export_csv"),
+                    href: worklogs_coverage_export_href(query, "csv"))]
       end
 
       private

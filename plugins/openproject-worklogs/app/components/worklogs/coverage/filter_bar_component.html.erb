@@ -133,9 +133,23 @@
         <% end %>
       </div>
 
-      <a class="worklogs-button" href="<%= export_href %>" download>
-        <%= t("worklogs.coverage.export") %>
-      </a>
+      <%# Export --------------------------------------------------------- %>
+      <details class="worklogs-drop" data-worklogs-drop>
+        <summary class="worklogs-drop--chip">
+          <span class="worklogs-drop--value"><%= t("worklogs.coverage.export") %></span>
+        </summary>
+        <div class="worklogs-drop--panel">
+          <ul class="worklogs-drop--options">
+            <% exports.each do |export| %>
+              <li>
+                <a class="worklogs-drop--link" href="<%= export.href %>" download>
+                  <span><%= export.label %></span>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </details>
     </div>
   </div>
 <% end %>

@@ -6,8 +6,8 @@ module Worklogs
       worklogs_coverage_path(query.merge(overrides).to_params)
     end
 
-    def worklogs_coverage_export_href(query)
-      worklogs_coverage_path(query.to_params.merge(format: "csv"))
+    def worklogs_coverage_export_href(query, format = "csv")
+      worklogs_coverage_path(query.to_params.merge(format:))
     end
 
     # A percentage nobody is owed anything for is not 0% and not 100%; it is

@@ -12,6 +12,7 @@ module Worklogs
     class XlsExport
       include ActionView::Helpers::NumberHelper
       include Worklogs::ReportsHelper
+      include ExportMetadata
 
       attr_reader :result, :detail, :title
 
@@ -65,35 +66,6 @@ module Worklogs
         data.notes.each { |note| builder.add_row([note]) }
       end
 
-      # What was asked, next to the answer. A spreadsheet outlives the tab it
-      # came from, and six weeks later "35h 30m of what?" has no answer at all
-      # unless the file carries the question.
-      def meta_rows(grouping: true)
-        rows = [[I18n.t("worklogs.reports.period"), query.period_label]]
-        if grouping
-          rows << [I18n.t("worklogs.reports.measure"), I18n.t("worklogs.reports.measures.#{query.measure}")]
-          rows << [I18n.t("worklogs.reports.group_by"), grouping_summary]
-        end
-        rows << [I18n.t("worklogs.reports.filters"), filter_summary] if query.filters?
-        rows << [I18n.t("worklogs.reports.generated"), generated_summary]
-        rows
-      end
-
-      def grouping_summary
-        parts = query.row_dimensions.map(&:label)
-        parts << I18n.t("worklogs.reports.by_column", dimension: query.column_dimension.label) if query.column_dimension
-
-        parts.join(" > ")
-      end
-
-      def filter_summary
-        I18n.t("worklogs.reports.saved.filter_summary", count: query.filter_count)
-      end
-
-      def generated_summary
-        "#{Time.zone.now.strftime('%Y-%m-%d %H:%M')} · #{result.viewer.name}"
-      end
-
       def format_value_columns(builder, first_index, last_index)
         (first_index...last_index).each do |index|
           builder.add_format_option_to_column(index, number_format: measure_number_format)
@@ -107,9 +79,9 @@ module Worklogs
       end
 
       def measure_number_format
-        case query.measure
-        when "entries" then "0"
-        when "costs" then currency_number_format
+        case measure_format
+        when :integer then "0"
+        when :currency then currency_number_format
         else "0.00"
         end
       end

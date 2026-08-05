@@ -124,6 +124,19 @@ module OpenProject
              if: ->(*) { User.current.admin? }
       end
 
+      # Core knows :xls but not :xlsx, and `respond_to { format.xlsx }` on an
+      # unregistered format is an ActionController::UnknownFormat. Guarded so
+      # that the day core registers it, this quietly steps aside rather than
+      # redefining it underneath everybody else.
+      # The type is spelled out rather than read off Xlsx::Workbook::CONTENT_TYPE
+      # because an initializer runs before autoloading is allowed; the writer's
+      # constant is checked against this string in script/verify.rb instead.
+      initializer "worklogs.mime_types" do
+        if Mime[:xlsx].nil?
+          Mime::Type.register("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", :xlsx)
+        end
+      end
+
       # Hourly, not weekly: GoodJob reads its cron table once at boot, so a
       # weekly entry would freeze the reminder day and hour into the deployment.
       # The job itself checks the setting and does nothing the other 167 times.

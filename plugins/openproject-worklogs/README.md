@@ -33,7 +33,7 @@ column per day, every cell editable in place.
   they actually worked on, every figure links into their own sheet, and the
   footer adds the team up day by day. Filter by person, project or activity;
   order by name or by who logged the most; show only the people with time on the
-  sheet, or everyone who was expected to log some. Exports as CSV.
+  sheet, or everyone who was expected to log some. Exports as .xlsx or CSV.
 - **`/worklogs/reports`** — a pivot over the same time entries: rows grouped up
   to two levels deep by user, project, work package, type, status, activity,
   assignee, priority, version or a time bucket (day, week, month, quarter,
@@ -50,9 +50,9 @@ column per day, every cell editable in place.
 - Every figure in the pivot — subtotals included — opens the entries behind it.
   Without that a report is a set of assertions the reader has to take on trust.
 - Bars for the biggest rows, and a trend strip when the report has a time axis.
-- **Export** the report as CSV, Excel or PDF, or every time entry behind it as
-  CSV or Excel — same rows, same order, same totals as the screen, with the
-  question the report asked written into the file beside the answer.
+- **Export** the report as .xlsx, CSV, .xls or PDF, or every time entry behind
+  it as .xlsx, CSV or .xls — same rows, same order, same totals as the screen,
+  with the question the report asked written into the file beside the answer.
 - **Saved reports**, named and optionally shared. Sharing hands over the
   question, never the answer: opening someone else's report re-runs it as you,
   against your own visible time entries.
@@ -65,7 +65,8 @@ column per day, every cell editable in place.
 - **`/worklogs/coverage`** — who logged their hours and who did not: one row per
   person, one column per week (or day, or month), utilisation against what was
   owed, and every cell a link straight into that person's timesheet for that
-  week. Filterable to just the people who are behind, and exportable as CSV.
+  week. Filterable to just the people who are behind, and exportable as .xlsx
+  or CSV.
 - **Weekly reminders** by mail to everyone who did not finish their week — off
   until switched on, and never sent to somebody who already handed the week in.
 
@@ -265,15 +266,17 @@ docker compose exec web bin/rails runner \
   plugins/openproject-worklogs/script/verify.rb
 ```
 
-83 checks: that every constant still resolves, that the three permissions and
+97 checks: that every constant still resolves, that the three permissions and
 both menus registered, that every routed action is covered by a permission, that
 core's `TimeEntries` contracts still call our lock validation on update, delete
 and both directions of a move, that periods step and anchor, that a month's weeks
 cover it end to end and lock a day at a time, that every report filter reaches
 SQL and that a typed `%` is a character rather than a wildcard, that settings
 round-trip and cast, that the team sheet measures a balance against what was
-owed by today and cannot be widened past `TimeEntry.visible`, that the reminder
-job is on the cron table hourly, and that en and vi agree key for key. It writes inside a transaction and rolls back, so it
+owed by today and cannot be widened past `TimeEntry.visible`, that a workbook is
+a zip of well-formed XML whose figures are numbers and whose sheet names Excel
+will accept, that the reminder job is on the cron table hourly, and that en and
+vi agree key for key. It writes inside a transaction and rolls back, so it
 is safe against real data.
 
 **From the outside**, over HTTP:
@@ -282,9 +285,10 @@ is safe against real data.
 plugins/openproject-worklogs/script/smoke.sh http://localhost:8080 admin '<password>'
 ```
 
-35 checks: every page renders, the month sheet draws its week seams, the team
-sheet draws a person per row and opens one up, all five export formats download, an anchored period and every new filter answer, a
-nonsense span falls back instead of erroring, the fingerprinted asset is served
+43 checks: every page renders, the month sheet draws its week seams, the team
+sheet draws a person per row and opens one up, every export format downloads and
+each workbook really is a zip served as a spreadsheet, an anchored period and
+every new filter answer, a nonsense span falls back instead of erroring, the fingerprinted asset is served
 and a stale digest is refused, the homescreen block is there, and the timesheet
 is not public.
 
@@ -393,15 +397,22 @@ parsing, keyboard movement and autosave on top.
   narrow it and nothing can widen it. Work packages are joined with a LEFT JOIN,
   or time logged on meetings would silently vanish from every report grouped by
   type or status.
-- All five exports render one shared shape (`Reports::TableData` for the pivot,
-  `Reports::DetailData` for the entries). Three formats each walking the node
-  tree themselves would be three chances to disagree with the screen.
-- CSV and Excel write figures as **numbers**; the PDF writes them as **durations**
-  (`35h 30m`). A spreadsheet is opened to be re-summed and a duration string
-  cannot be; a PDF is only ever read.
-- No gem was added for either: `spreadsheet`, `prawn` and `prawn-table` are
-  already in the image's frozen bundle because core exports work packages with
-  them. The PDF is drawn on core's `Exports::PDF::Common::View` for the same
+- Every export renders one shared shape (`Reports::TableData` for the pivot,
+  `Reports::DetailData` for the entries, `Team::ExportTable` and
+  `Coverage::ExportTable` for those two pages). Four formats each walking the
+  node tree themselves would be four chances to disagree with the screen.
+- The spreadsheets write figures as **numbers**; the PDF writes them as
+  **durations** (`35h 30m`). A spreadsheet is opened to be re-summed and a
+  duration string cannot be; a PDF is only ever read.
+- **The .xlsx writer is this plugin's own** (`Worklogs::Xlsx`). There is no xlsx
+  gem in the image's frozen bundle and none can be added — no compiler, no git,
+  and `bundle install` cannot re-resolve the Gemfile at all. An .xlsx is a zip of
+  XML parts and `rubyzip` *is* in the bundle, so the format is written out
+  directly: inline strings, one small style table, no charts, no themes. `.xls`
+  stays on the `spreadsheet` gem for anyone on an older spreadsheet application.
+- No gem was added for any of it: `spreadsheet`, `prawn`, `prawn-table` and
+  `rubyzip` are already in the image's frozen bundle because core exports work
+  packages with them. The PDF is drawn on core's `Exports::PDF::Common::View` for the same
   reason it exists at all — Prawn's built-in fonts are WinAnsi and would raise
   on the first Vietnamese name.
 - A saved report stores parameters, never rows. That is what makes sharing one

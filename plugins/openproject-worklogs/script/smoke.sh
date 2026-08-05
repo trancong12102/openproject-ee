@@ -119,8 +119,23 @@ echo "Exports"
 check "the coverage CSV downloads"   200 "$(status '/worklogs/coverage?format=csv')"
 check "the team CSV downloads"       200 "$(status '/worklogs/team?format=csv')"
 check "the report CSV downloads"     200 "$(status '/worklogs/reports?format=csv')"
-check "the report workbook downloads" 200 "$(status '/worklogs/reports?format=xls')"
+check "the report .xls downloads"     200 "$(status '/worklogs/reports?format=xls')"
 check "the report PDF downloads"     200 "$(status '/worklogs/reports?format=pdf')"
+check "the coverage workbook downloads" 200 "$(status '/worklogs/coverage?format=xlsx')"
+check "the team workbook downloads"  200 "$(status '/worklogs/team?format=xlsx')"
+check "the report workbook downloads" 200 "$(status '/worklogs/reports?format=xlsx')"
+check "the entries workbook downloads" 200 "$(status '/worklogs/reports?format=xlsx&detail=1')"
+
+# A workbook is a zip, and a zip starts "PK". This is the check that catches the
+# day a workbook arrives as an HTML error page with a 200 on it.
+for page in coverage team reports; do
+  MAGIC="$(curl -s -b "$JAR" "$BASE/worklogs/$page?format=xlsx" | head -c 2)"
+  check "the $page workbook is a real .xlsx" "PK" "$MAGIC"
+done
+
+CTYPE="$(curl -s -b "$JAR" -o /dev/null -w '%{content_type}' "$BASE/worklogs/team?format=xlsx")"
+check "it is served as a spreadsheet" \
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" "${CTYPE%%;*}"
 
 echo
 echo "Assets"

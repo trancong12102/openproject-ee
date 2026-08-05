@@ -30,6 +30,10 @@ module Worklogs
           send_data(Reports::XlsExport.new(result: @result, detail:, title: export_title).to_xls,
                     **export_options("xls", "application/vnd.ms-excel"))
         end
+        format.xlsx do
+          send_data(Reports::XlsxExport.new(result: @result, detail:, title: export_title).to_xlsx,
+                    **export_options("xlsx", Xlsx::Workbook::CONTENT_TYPE))
+        end
         format.pdf do
           send_data(Reports::PDFExport.new(result: @result, title: export_title).to_pdf,
                     **export_options("pdf", "application/pdf"))

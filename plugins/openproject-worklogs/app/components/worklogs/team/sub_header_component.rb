@@ -29,8 +29,8 @@ module Worklogs
         worklogs_team_href(query, date: "today")
       end
 
-      def export_href
-        worklogs_team_path(worklogs_team_params(query).merge(format: :csv))
+      def export_href(format)
+        worklogs_team_path(worklogs_team_params(query).merge(format:))
       end
     end
   end
