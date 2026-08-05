@@ -1,0 +1,80 @@
+<%= component_wrapper do %>
+  <div class="worklogs-panel">
+    <% if any? %>
+      <div class="worklogs-coverage--scroll">
+        <table class="worklogs-coverage">
+          <thead>
+            <tr>
+              <th class="worklogs-coverage--name"><%= t("worklogs.reports.dimensions.user") %></th>
+              <% buckets.each do |bucket| %>
+                <th class="<%= bucket_classes(bucket).join(' ') %>" title="<%= bucket_title(bucket) %>">
+                  <%= bucket_label(bucket) %>
+                </th>
+              <% end %>
+              <th class="-number"><%= t("worklogs.coverage.total_logged") %></th>
+              <th class="-number"><%= t("worklogs.coverage.total_expected") %></th>
+              <th class="-number"><%= t("worklogs.coverage.total_missing") %></th>
+              <th class="-number"><%= t("worklogs.coverage.utilization") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.each do |row| %>
+              <tr class="<%= row_classes(row).join(' ') %>">
+                <th scope="row" class="worklogs-coverage--name">
+                  <a href="<%= user_href(row) %>"><%= row.user.name %></a>
+                </th>
+                <% row.cells.each do |cell| %>
+                  <td class="<%= cell_classes(cell).join(' ') %>">
+                    <a href="<%= cell_href(cell, row) %>" title="<%= cell_title(cell, row) %>">
+                      <span class="worklogs-coverage--hours"><%= cell_value(cell) %></span>
+                      <% if cell_note(cell) %>
+                        <span class="worklogs-coverage--gap"><%= cell_note(cell) %></span>
+                      <% end %>
+                      <% if submission_mark(cell) %>
+                        <span class="worklogs-coverage--mark" aria-hidden="true"><%= submission_mark(cell) %></span>
+                      <% end %>
+                    </a>
+                  </td>
+                <% end %>
+                <td class="-number"><%= worklogs_duration(row.logged) %></td>
+                <td class="-number"><%= worklogs_duration(row.expected) %></td>
+                <td class="-number <%= "-gap" if row.missing.positive? %>">
+                  <%= row.missing.positive? ? worklogs_duration(row.missing) : "" %>
+                </td>
+                <td class="<%= utilization_classes(row.utilization).join(' ') %>">
+                  <%= worklogs_utilization(row.utilization) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" class="worklogs-coverage--name"><%= t("worklogs.coverage.everyone") %></th>
+              <% totals.cells.each do |cell| %>
+                <td class="-number"><%= worklogs_duration(cell.logged) %></td>
+              <% end %>
+              <td class="-number"><%= worklogs_duration(totals.logged) %></td>
+              <td class="-number"><%= worklogs_duration(totals.expected) %></td>
+              <td class="-number <%= "-gap" if total_missing.positive? %>">
+                <%= total_missing.positive? ? worklogs_duration(total_missing) : "" %>
+              </td>
+              <td class="<%= utilization_classes(totals.utilization).join(' ') %>">
+                <%= worklogs_utilization(totals.utilization) %>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <% notes.each do |note| %>
+        <p class="worklogs-panel--note"><%= note %></p>
+      <% end %>
+    <% else %>
+      <%= render(Primer::Beta::Blankslate.new(border: false)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: "people") %>
+        <% blankslate.with_heading(tag: :h3).with_content(t("worklogs.coverage.blank_heading")) %>
+        <% blankslate.with_description { blank_description } %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

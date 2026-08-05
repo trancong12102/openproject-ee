@@ -47,6 +47,12 @@ column per day, every cell editable in place.
 - A submitted or approved week is **locked** — enforced on core's own time entry
   contracts, so the grid, the log-time dialog, the API and anything added later
   are all refused alike.
+- **`/worklogs/coverage`** — who logged their hours and who did not: one row per
+  person, one column per week (or day, or month), utilisation against what was
+  owed, and every cell a link straight into that person's timesheet for that
+  week. Filterable to just the people who are behind, and exportable as CSV.
+- **Weekly reminders** by mail to everyone who did not finish their week — off
+  until switched on, and never sent to somebody who already handed the week in.
 
 ## A report is its URL
 
@@ -77,6 +83,29 @@ a week they could have opened as a timesheet in the first place. The hours
 recorded on a submission are the week's **real** total, not the approver's
 filtered view of it — permissions must not be able to change the number somebody
 is signing.
+
+## Coverage, and what "missing" means
+
+Everything on the coverage page is measured against **what was owed by today**,
+never against the whole period. On a Tuesday the rest of the week is not yet
+owed, and a page that reports everybody as 24 hours short every Tuesday is a
+page nobody opens twice.
+
+Gaps are added up, never netted off. Somebody who logged nothing one week and
+twelve hours of overtime the next still has an empty week to explain, so a row
+is the sum of its cells and the footer the sum of its rows — the columns add up
+in both directions.
+
+The list starts from the *people*, not from the time entries. A page about
+missing time built on time entries could never show the person who logged
+nothing at all, which is the one case it exists for. Hours are still read
+through `TimeEntry.visible(viewer)`, so it can only ever point at a gap the
+viewer was allowed to see.
+
+Reminders are one mail to one person about one week, and are skipped for anyone
+who has already submitted it, owed nothing (a full week of holiday), or is
+within a few minutes of their target. A digest of everybody's gaps sent to a
+manager is a report, and there is already a page for that.
 
 ## What it does not add
 
@@ -151,6 +180,17 @@ parsing, keyboard movement and autosave on top.
 - A saved report stores parameters, never rows. That is what makes sharing one
   safe, and it is why `SavedReport#query_params` holds `period: "this_month"`
   rather than the dates it resolved to on the day it was saved.
+- `CapacityCalendar` loads working days, holidays, per-user schedules and
+  absences in four queries for any number of people, and `Capacity` is a
+  one-user view onto it. A team-wide quarter would otherwise run two queries per
+  person and one per week — which is how a page that looks like a spreadsheet
+  ends up taking eight seconds.
+- `Worklogs::Period` is the only thing that knows what "last quarter" means. The
+  report builder and the coverage page both ask it, because two answers to that
+  question is one too many.
+- The reminder cron entry is registered at boot (GoodJob reads its table once)
+  but whether anything is sent is a setting read at run time, so switching
+  reminders off does not need a restart.
 - `Worklogs::PeriodLock` is asked once per day-and-user and memoised in
   `RequestStore` for the rest of the request. Without that, saving one cell would
   run a lock query per contract validation on a page that has forty of them.

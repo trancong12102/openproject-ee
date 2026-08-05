@@ -1,0 +1,37 @@
+<%= component_wrapper do %>
+  <div class="worklogs-stats">
+    <div class="worklogs-stats--tile -primary">
+      <span class="worklogs-stats--label"><%= t("worklogs.coverage.team_logged") %></span>
+      <span class="worklogs-stats--value"><%= logged %></span>
+      <span class="worklogs-stats--caption">
+        <%= t("worklogs.coverage.of_expected", hours: expected) %>
+      </span>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.coverage.utilization") %></span>
+      <span class="worklogs-stats--value <%= utilization_scheme %>"><%= utilization %></span>
+      <span class="worklogs-stats--caption"><%= t("worklogs.coverage.utilization_caption") %></span>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.coverage.behind") %></span>
+      <span class="worklogs-stats--value <%= missing_scheme %>">
+        <% if missing_count.zero? %>
+          <%= t("worklogs.coverage.nobody_behind") %>
+        <% else %>
+          <a href="<%= missing_href %>"><%= t("worklogs.coverage.people_behind", count: missing_count) %></a>
+        <% end %>
+      </span>
+      <span class="worklogs-stats--caption"><%= t("worklogs.coverage.behind_caption", hours: missing_hours) %></span>
+    </div>
+
+    <div class="worklogs-stats--tile">
+      <span class="worklogs-stats--label"><%= t("worklogs.coverage.silent") %></span>
+      <span class="worklogs-stats--value <%= silent_scheme %> -small">
+        <%= silent_count.zero? ? t("worklogs.coverage.nobody_silent") : t("worklogs.coverage.people_silent", count: silent_count) %>
+      </span>
+      <span class="worklogs-stats--caption"><%= t("worklogs.coverage.silent_caption") %></span>
+    </div>
+  </div>
+<% end %>

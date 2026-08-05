@@ -7,8 +7,7 @@ module Worklogs
     # back button, bookmarks and "copy this to a colleague" all work without a
     # single line of state-keeping.
     class Query
-      PERIODS = %w[this_week last_week this_month last_month last_30_days
-                   this_quarter this_year last_year custom].freeze
+      PERIODS = Worklogs::Period::NAMES
       MEASURES = %w[hours costs entries].freeze
       MAX_ROW_LEVELS = 2
 
@@ -19,9 +18,11 @@ module Worklogs
         columns: nil
       }.freeze
 
-      attr_reader :period, :measure, :row_keys, :column_key, :report_id,
+      attr_reader :measure, :row_keys, :column_key, :report_id,
                   :user_ids, :project_ids, :activity_ids, :type_ids, :status_ids
-      attr_accessor :from, :to
+
+      delegate :from, :to, :range, to: :period_object
+      delegate :label, to: :period_object, prefix: :period
 
       class << self
         def from_params(params)
@@ -45,7 +46,7 @@ module Worklogs
       def initialize(period: nil, from: nil, to: nil, measure: nil, rows: nil, columns: nil,
                      user_ids: nil, project_ids: nil, activity_ids: nil, type_ids: nil, status_ids: nil,
                      report: nil)
-        @period = PERIODS.include?(period.to_s) ? period.to_s : DEFAULTS[:period]
+        @period_object = Worklogs::Period.new(period, from:, to:, default: DEFAULTS[:period])
         @measure = MEASURES.include?(measure.to_s) ? measure.to_s : DEFAULTS[:measure]
 
         @row_keys = sanitise_dimensions(rows).first(MAX_ROW_LEVELS)
@@ -58,8 +59,10 @@ module Worklogs
         @type_ids = integer_list(type_ids)
         @status_ids = integer_list(status_ids)
         @report_id = Integer(report.to_s, exception: false)
+      end
 
-        assign_range(from, to)
+      def period
+        period_object.name
       end
 
       def row_dimensions
@@ -74,22 +77,12 @@ module Worklogs
         (row_dimensions + [column_dimension]).compact
       end
 
-      def range
-        from..to
-      end
-
       def filters?
         [user_ids, project_ids, activity_ids, type_ids, status_ids].any?(&:any?)
       end
 
       def filter_count
         [user_ids, project_ids, activity_ids, type_ids, status_ids].sum(&:size)
-      end
-
-      def period_label
-        return "#{I18n.l(from, format: :long)} – #{I18n.l(to, format: :long)}" if period == "custom"
-
-        I18n.t("worklogs.reports.periods.#{period}")
       end
 
       # What the report *is*: the part that gets saved, and the part two reports
@@ -101,7 +94,7 @@ module Worklogs
         {
           period:, measure:, rows: row_keys, columns: column_key,
           user_ids:, project_ids:, activity_ids:, type_ids:, status_ids:
-        }.merge(custom_range_params).compact_blank
+        }.merge(period_object.to_params.except(:period)).compact_blank
       end
 
       # `report` rides along in the URL without changing a single row of the
@@ -126,11 +119,7 @@ module Worklogs
 
       private
 
-      def custom_range_params
-        return {} unless period == "custom"
-
-        { from: from.iso8601, to: to.iso8601 }
-      end
+      attr_reader :period_object
 
       def sanitise_dimensions(keys)
         Array(keys).filter_map { |key| Dimension.find(key)&.key }.uniq
@@ -140,38 +129,6 @@ module Worklogs
         Array(values).flat_map { |value| value.to_s.split(",") }
                      .filter_map { |value| Integer(value, exception: false) }
                      .uniq
-      end
-
-      def assign_range(raw_from, raw_to)
-        if period == "custom"
-          @from = parse_date(raw_from) || Time.zone.today.beginning_of_month
-          @to = parse_date(raw_to) || Time.zone.today
-          @from, @to = @to, @from if @from > @to
-        else
-          @from, @to = preset_range
-        end
-      end
-
-      def parse_date(value)
-        Date.iso8601(value.to_s)
-      rescue Date::Error
-        nil
-      end
-
-      def preset_range # rubocop:disable Metrics/AbcSize
-        today = Time.zone.today
-        week_start = Week.start_day
-
-        case period
-        when "this_week" then [today.beginning_of_week(week_start), today.end_of_week(week_start)]
-        when "last_week" then [(today - 7).beginning_of_week(week_start), (today - 7).end_of_week(week_start)]
-        when "last_month" then [today.last_month.beginning_of_month, today.last_month.end_of_month]
-        when "last_30_days" then [today - 29, today]
-        when "this_quarter" then [today.beginning_of_quarter, today.end_of_quarter]
-        when "this_year" then [today.beginning_of_year, today.end_of_year]
-        when "last_year" then [today.last_year.beginning_of_year, today.last_year.end_of_year]
-        else [today.beginning_of_month, today.end_of_month]
-        end
       end
     end
   end

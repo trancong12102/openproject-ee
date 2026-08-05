@@ -13,6 +13,10 @@ Rails.application.routes.draw do
       end
     end
 
+    # Who logged their hours and who did not. Singular: there is one table,
+    # and which slice of it you are looking at is in the query string.
+    get "coverage", to: "coverage#index", as: :coverage
+
     # A name pinned to a report's parameters. No :index — the list lives in the
     # report's own dropdown, where the person choosing one is already standing.
     resources :saved_reports, only: %i[new create edit update destroy]

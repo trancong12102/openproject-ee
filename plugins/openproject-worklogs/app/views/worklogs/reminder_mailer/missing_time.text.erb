@@ -1,0 +1,17 @@
+<%= t("worklogs.reminders.greeting", name: @user.firstname.presence || @user.name) %>
+
+<%= t("worklogs.reminders.body",
+      week: t("worklogs.timesheet.week_number", number: @week.start_date.cweek),
+      range: "#{I18n.l(@week.start_date, format: :long)} – #{I18n.l(@week.end_date, format: :long)}") %>
+
+<%= t("worklogs.timesheet.daily_total") %>: <%= worklogs_duration(@row.logged) %>
+<%= t("worklogs.timesheet.capacity") %>: <%= worklogs_duration(@row.capacity) %>
+<%= t("worklogs.coverage.total_missing") %>: <%= worklogs_duration(@row.missing) %>
+<% if @row.empty_days.any? %>
+<%= t("worklogs.reminders.empty_days",
+      count: @row.empty_days.size,
+      days: @row.empty_days.map { |date| I18n.l(date, format: :long) }.join(", ")) %>
+<% end %>
+<%= worklogs_root_url(date: @week.to_param) %>
+
+<%= t("worklogs.reminders.footer") %>

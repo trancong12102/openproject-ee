@@ -10,7 +10,11 @@ module OpenProject
       register "openproject-worklogs",
                author_url: "https://github.com/jmango360/openproject-ee",
                bundled: false,
-               settings: false do
+               # Reminders are off until somebody turns them on: a plugin that
+               # starts mailing everybody the week after an upgrade is a plugin
+               # people uninstall.
+               settings: { default: { "reminders_enabled" => false,
+                                      "reminder_tolerance" => 0.5 } } do
         # Global entry permission. Everything beyond "my own time" is additionally
         # filtered against the core per-project time entry permissions
         # (view_time_entries / view_own_time_entries), so granting this alone can
@@ -26,6 +30,7 @@ module OpenProject
                        "worklogs/cells": %i[create],
                        "worklogs/rows": %i[new create destroy copy_previous],
                        "worklogs/reports": %i[index entries],
+                       "worklogs/coverage": %i[index],
                        "worklogs/saved_reports": %i[new create edit update destroy],
                        "worklogs/submissions": %i[new create destroy]
                      },
@@ -66,11 +71,31 @@ module OpenProject
              if: ->(*) { User.current.allowed_globally?(:view_worklogs) }
 
         menu :global_menu,
+             :worklogs_coverage,
+             { controller: "/worklogs/coverage", action: :index },
+             caption: :"worklogs.coverage.title",
+             parent: :worklogs,
+             if: ->(*) { User.current.allowed_globally?(:view_worklogs) }
+
+        menu :global_menu,
              :worklogs_approvals,
              { controller: "/worklogs/approvals", action: :index },
              caption: :"worklogs.approval.title",
              parent: :worklogs,
              if: ->(*) { User.current.allowed_globally?(:approve_worklogs) }
+      end
+
+      # GoodJob reads its cron table once, at boot, so the schedule is fixed
+      # here and whether anything is sent is decided at run time by the
+      # setting. Monday 08:00 — early enough to act on, late enough to have
+      # arrived before the first meeting.
+      config.after_initialize do
+        Rails.application.config.good_job.cron.merge!(
+          "Cron::WorklogsReminderJob": {
+            cron: "0 8 * * 1",
+            class: "Cron::WorklogsReminderJob"
+          }
+        )
       end
 
       # A locked week has to be locked wherever time is written, not only in

@@ -1,0 +1,112 @@
+<%= component_wrapper do %>
+  <div class="worklogs-controls" data-worklogs-controls>
+    <div class="worklogs-controls--group">
+      <%# Period ------------------------------------------------------------ %>
+      <details class="worklogs-drop" data-worklogs-drop>
+        <summary class="worklogs-drop--chip -primary">
+          <span class="worklogs-drop--label"><%= t("worklogs.reports.period") %></span>
+          <span class="worklogs-drop--value"><%= query.period_label %></span>
+        </summary>
+        <div class="worklogs-drop--panel">
+          <form method="get" action="<%= worklogs_coverage_path %>">
+            <%= worklogs_coverage_hidden_fields(query, except: %i[period from to]) %>
+            <ul class="worklogs-drop--options">
+              <% periods.each do |period| %>
+                <li>
+                  <label class="worklogs-drop--option">
+                    <input type="radio" name="period" value="<%= period %>" <%= "checked" if query.period == period %>>
+                    <span><%= t("worklogs.reports.periods.#{period}") %></span>
+                  </label>
+                </li>
+              <% end %>
+            </ul>
+            <div class="worklogs-drop--dates">
+              <label>
+                <span><%= t("worklogs.reports.from") %></span>
+                <input type="date" name="from" value="<%= query.from.iso8601 %>">
+              </label>
+              <label>
+                <span><%= t("worklogs.reports.to") %></span>
+                <input type="date" name="to" value="<%= query.to.iso8601 %>">
+              </label>
+            </div>
+            <div class="worklogs-drop--actions">
+              <button type="submit" class="worklogs-button -primary"><%= t("worklogs.reports.apply") %></button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <%# Who ---------------------------------------------------------------- %>
+      <% filters.each do |filter| %>
+        <details class="worklogs-drop" data-worklogs-drop>
+          <summary class="worklogs-drop--chip <%= "-active" if selected_ids(filter).any? %>">
+            <span class="worklogs-drop--label"><%= filter.label %></span>
+            <span class="worklogs-drop--value"><%= chip_value(filter) %></span>
+          </summary>
+          <div class="worklogs-drop--panel">
+            <form method="get" action="<%= worklogs_coverage_path %>">
+              <%= worklogs_coverage_hidden_fields(query, except: :"#{filter.name}_ids") %>
+              <% if filter.options.size > 8 %>
+                <input type="search" class="worklogs-drop--search" data-worklogs-drop-search
+                       placeholder="<%= t('worklogs.reports.search_placeholder') %>"
+                       aria-label="<%= t('worklogs.reports.search_placeholder') %>">
+              <% end %>
+              <ul class="worklogs-drop--options">
+                <% filter.options.each do |option| %>
+                  <li data-worklogs-drop-item="<%= option.label.to_s.downcase %>">
+                    <label class="worklogs-drop--option">
+                      <input type="checkbox" name="<%= filter.name %>_ids[]" value="<%= option.id %>"
+                             <%= "checked" if selected_ids(filter).include?(option.id) %>>
+                      <span><%= option.label %></span>
+                    </label>
+                  </li>
+                <% end %>
+              </ul>
+              <div class="worklogs-drop--actions">
+                <button type="submit" class="worklogs-button -primary"><%= t("worklogs.reports.apply") %></button>
+                <% if selected_ids(filter).any? %>
+                  <a class="worklogs-button" href="<%= clear_href(filter) %>"><%= t("worklogs.reports.clear") %></a>
+                <% end %>
+              </div>
+            </form>
+          </div>
+        </details>
+      <% end %>
+
+      <% if query.filters? %>
+        <a class="worklogs-controls--clear" href="<%= clear_all_href %>">
+          <%= t("worklogs.reports.clear_all", count: query.filter_count) %>
+        </a>
+      <% end %>
+    </div>
+
+    <div class="worklogs-controls--group -end">
+      <%# Columns ------------------------------------------------------------ %>
+      <div class="worklogs-segmented" role="group" aria-label="<%= t('worklogs.coverage.group_by') %>">
+        <% groupings.each do |grouping| %>
+          <a class="worklogs-segmented--item <%= "-selected" if query.group_by == grouping %>"
+             href="<%= worklogs_coverage_href(query, group_by: grouping) %>"
+             <%= 'aria-current="true"'.html_safe if query.group_by == grouping %>>
+            <%= t("worklogs.coverage.groupings.#{grouping}") %>
+          </a>
+        <% end %>
+      </div>
+
+      <%# Show ---------------------------------------------------------------- %>
+      <div class="worklogs-segmented" role="group" aria-label="<%= t('worklogs.coverage.scope') %>">
+        <% scopes.each do |scope| %>
+          <a class="worklogs-segmented--item <%= "-selected" if query.scope == scope %>"
+             href="<%= worklogs_coverage_href(query, scope: scope) %>"
+             <%= 'aria-current="true"'.html_safe if query.scope == scope %>>
+            <%= t("worklogs.coverage.scopes.#{scope}") %>
+          </a>
+        <% end %>
+      </div>
+
+      <a class="worklogs-button" href="<%= export_href %>" download>
+        <%= t("worklogs.coverage.export") %>
+      </a>
+    </div>
+  </div>
+<% end %>

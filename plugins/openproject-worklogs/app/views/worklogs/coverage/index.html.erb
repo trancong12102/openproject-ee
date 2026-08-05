@@ -1,0 +1,16 @@
+<% content_for :header_tags do %>
+  <%= tag.link(rel: "stylesheet", href: OpenProject::Worklogs::Assets.path("worklogs.css")) %>
+  <%= javascript_include_tag OpenProject::Worklogs::Assets.path("worklogs.js"), defer: true %>
+<% end %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header| %>
+  <% header.with_title { t("worklogs.coverage.title") } %>
+  <% header.with_description { t("worklogs.coverage.description") } %>
+  <% header.with_breadcrumbs(nil) %>
+<% end %>
+
+<div class="worklogs-page">
+  <%= render(Worklogs::Coverage::FilterBarComponent.new(query: @query, result: @result, viewer: current_user)) %>
+  <%= render(Worklogs::Coverage::SummaryComponent.new(result: @result)) %>
+  <%= render(Worklogs::Coverage::TableComponent.new(result: @result)) %>
+</div>
