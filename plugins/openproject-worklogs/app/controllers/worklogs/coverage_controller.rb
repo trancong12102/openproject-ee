@@ -7,7 +7,7 @@ module Worklogs
     include Worklogs::CoverageHelper
 
     before_action :require_login
-    authorize_with_global_permission :view_worklogs
+    authorize_with_global_permission :view_worklogs_coverage
 
     before_action :load_query
 

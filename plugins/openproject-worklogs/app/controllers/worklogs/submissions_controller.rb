@@ -6,6 +6,7 @@ module Worklogs
     before_action :require_login
     authorize_with_global_permission :view_worklogs
 
+    before_action :require_approvals_enabled
     before_action :load_week, :load_user
 
     def new
@@ -41,6 +42,10 @@ module Worklogs
     end
 
     private
+
+    def require_approvals_enabled
+      render_404 unless Settings.approvals_enabled?
+    end
 
     def service
       @service ||= SubmissionService.new(actor: current_user)

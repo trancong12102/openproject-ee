@@ -81,6 +81,10 @@ module Worklogs
         submission.events.create!(user: actor, action:, note:, hours: submission.hours)
       end
 
+      # The lock memo is request-scoped, and this request is not over: the
+      # controller redraws the grid straight afterwards, and it has to see the
+      # week it just closed rather than the one it read a moment ago.
+      PeriodLock.invalidate!
       submission
     rescue ActiveRecord::RecordInvalid
       submission

@@ -16,6 +16,8 @@ module Worklogs
       delegate :week, :user, :submission, to: :timesheet
 
       def render?
+        return false unless Settings.approvals_enabled?
+
         own? || submission.present?
       end
 

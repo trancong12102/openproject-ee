@@ -1,0 +1,95 @@
+<% html_title(t(:label_administration), t("worklogs.label_worklogs")) -%>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { t("worklogs.label_worklogs") }
+    header.with_description { t("worklogs.settings.description") }
+    header.with_breadcrumbs([{ href: admin_index_path, text: t(:label_administration) },
+                             t("worklogs.label_worklogs")])
+  end
+%>
+
+<section class="admin--edit-section">
+  <%= styled_form_tag({ action: :update }, method: :post, id: "worklogs-settings-form") do %>
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t("worklogs.approval.title") %></legend>
+
+      <div class="form--field">
+        <div class="form--field-container">
+          <label class="form--label-with-check-box">
+            <%= styled_check_box_tag "approvals_enabled", "1", @settings.approvals_enabled? %>
+            <%= t("worklogs.settings.approvals_enabled") %>
+          </label>
+        </div>
+        <div class="form--field-instructions"><%= t("worklogs.settings.approvals_enabled_text") %></div>
+      </div>
+
+      <div class="form--field">
+        <div class="form--field-container">
+          <label class="form--label-with-check-box">
+            <%= styled_check_box_tag "lock_approved_periods", "1", @settings.lock_approved_periods? %>
+            <%= t("worklogs.settings.lock_approved_periods") %>
+          </label>
+        </div>
+        <div class="form--field-instructions"><%= t("worklogs.settings.lock_approved_periods_text") %></div>
+      </div>
+
+      <div class="form--field">
+        <div class="form--field-container">
+          <label class="form--label-with-check-box">
+            <%= styled_check_box_tag "allow_self_approval", "1", @settings.allow_self_approval? %>
+            <%= t("worklogs.settings.allow_self_approval") %>
+          </label>
+        </div>
+        <div class="form--field-instructions"><%= t("worklogs.settings.allow_self_approval_text") %></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t("worklogs.settings.reminders") %></legend>
+
+      <div class="form--field">
+        <div class="form--field-container">
+          <label class="form--label-with-check-box">
+            <%= styled_check_box_tag "reminders_enabled", "1", @settings.reminders_enabled? %>
+            <%= t("worklogs.settings.reminders_enabled") %>
+          </label>
+        </div>
+        <div class="form--field-instructions"><%= t("worklogs.settings.reminders_enabled_text") %></div>
+      </div>
+
+      <div class="form--field">
+        <label class="form--label" for="reminder_weekday"><%= t("worklogs.settings.reminder_weekday") %></label>
+        <div class="form--field-container">
+          <%= styled_select_tag "reminder_weekday",
+                                options_for_select(weekday_options, @settings.reminder_weekday),
+                                container_class: "-middle" %>
+        </div>
+        <div class="form--field-instructions"><%= t("worklogs.settings.reminder_weekday_text") %></div>
+      </div>
+
+      <div class="form--field">
+        <label class="form--label" for="reminder_hour"><%= t("worklogs.settings.reminder_hour") %></label>
+        <div class="form--field-container">
+          <%= styled_select_tag "reminder_hour",
+                                options_for_select(hour_options, @settings.reminder_hour),
+                                container_class: "-middle" %>
+        </div>
+        <div class="form--field-instructions">
+          <%= t("worklogs.settings.reminder_hour_text", zone: Time.zone.name) %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <label class="form--label" for="reminder_tolerance"><%= t("worklogs.settings.reminder_tolerance") %></label>
+        <div class="form--field-container">
+          <%= styled_text_field_tag "reminder_tolerance", @settings.reminder_tolerance,
+                                    type: :number, step: "0.25", min: "0", container_class: "-xslim" %>
+        </div>
+        <div class="form--field-instructions"><%= t("worklogs.settings.reminder_tolerance_text") %></div>
+      </div>
+    </fieldset>
+
+    <%= styled_submit_tag t(:button_apply), class: "-primary" %>
+  <% end %>
+</section>

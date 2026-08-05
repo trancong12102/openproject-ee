@@ -107,6 +107,39 @@ who has already submitted it, owed nothing (a full week of holiday), or is
 within a few minutes of their target. A digest of everybody's gaps sent to a
 manager is a report, and there is already a page for that.
 
+## Permissions and settings
+
+Three global permissions, deliberately separate, granted through a global role
+(*Administration → Users and permissions → Global roles*):
+
+| Permission | Gives |
+| --- | --- |
+| `view_worklogs` | The timesheet and the reports. Keeping your own hours. |
+| `view_worklogs_coverage` | The coverage page — who on the team is behind. |
+| `approve_worklogs` | The approvals queue: approving, rejecting, reopening. |
+
+Coverage is split off from `view_worklogs` because looking at everybody's gaps is
+a manager's act, not part of filling in your own week. It is not a way to see
+anything new either way: hours are still read through `TimeEntry.visible(viewer)`.
+
+*Administration → Worklogs* holds the instance-wide switches, stored in the one
+`Setting.plugin_openproject_worklogs` hash and read through `Worklogs::Settings`,
+which casts them so nothing downstream has to remember that `"0"` is false:
+
+- **Approvals** on or off. Off hides the submit button and the approvals queue
+  and closes their URLs; nothing already submitted is deleted.
+- **Lock submitted weeks** — separable from approvals on purpose. Some teams want
+  the sign-off recorded and still want a correction to be possible afterwards.
+- **Self-approval**, off by default. Administrators can always approve their own.
+- **Reminders**: on/off, the weekday and hour to send, and a tolerance below which
+  somebody is left alone.
+
+The reminder job is scheduled **hourly**, not weekly, because GoodJob reads its
+cron table once at boot: a weekly entry would freeze the day and hour into the
+deployment. `Cron::WorklogsReminderJob` checks the setting itself and does nothing
+the other 167 times, so an administrator can move the reminder to Friday afternoon
+without a restart.
+
 ## What it does not add
 
 No new way to see or change time. `view_worklogs` is a global entry ticket; every
@@ -151,6 +184,14 @@ parsing, keyboard movement and autosave on top.
   because "you are 32h short" every Monday is noise. The grid's **`vs. target`
   row** compares each day against its own target and therefore sums, left to
   right, to the week figure beside it.
+- Anything named inside `Redmine::Plugin.register` is read **before Zeitwerk
+  exists**, so nothing under `app/` is resolvable there. That is why
+  `SETTINGS_DEFAULTS` sits in `engine.rb` itself rather than on
+  `Worklogs::Settings`, and why permissions are declared inside `project_module
+  nil do ... end`, which defers the block to a `to_prepare` hook.
+- Everything under `lib/` is eager-loaded, so a file there must define the
+  constant its name implies. `settings_defaults.rb` defining `SETTINGS_DEFAULTS`
+  is exactly the mismatch that stops the whole application from booting.
 - Headline figures use `DurationConverter` (`30h 15m`) so the page reads like the
   rest of OpenProject; the grid stays decimal, because its cells are inputs and
   you should see back the number you typed.

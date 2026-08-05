@@ -47,14 +47,15 @@ module Worklogs
       @week ||= Week.new(period_start)
     end
 
-    # Self-approval is refused for everyone but administrators. A two-person
-    # instance still has to be able to close a week, but nobody should be able
-    # to sign off their own timesheet by accident.
+    # Self-approval is refused for everyone but administrators, unless an
+    # administrator has turned it on for the instance. A two-person team still
+    # has to be able to close a week, but on any larger instance nobody should
+    # be able to sign off their own timesheet by accident.
     def decidable_by?(actor)
       return false unless submitted?
       return false unless actor&.allowed_globally?(:approve_worklogs)
 
-      actor.id != user_id || actor.admin?
+      actor.id != user_id || actor.admin? || Settings.allow_self_approval?
     end
 
     def withdrawable_by?(actor)

@@ -9,6 +9,7 @@ module Worklogs
     class << self
       def locked?(user_id:, on:)
         return false if user_id.blank? || on.blank?
+        return false unless Settings.lock_approved_periods?
 
         cache.fetch([user_id, on]) do
           Submission.locked.where(user_id:).covering(on).exists?
@@ -24,6 +25,12 @@ module Worklogs
       # query without ever outliving the request that asked.
       def cache
         RequestStore.store[:worklogs_period_lock] ||= Cache.new
+      end
+
+      # Called whenever a submission changes state, because the request that
+      # changed it usually goes on to render the week it just locked or opened.
+      def invalidate!
+        RequestStore.delete(:worklogs_period_lock)
       end
     end
 

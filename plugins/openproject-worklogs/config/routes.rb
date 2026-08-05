@@ -1,4 +1,11 @@
 Rails.application.routes.draw do
+  # Instance-wide switches. Lives under /admin because that is where an
+  # administrator looks for them, not under /worklogs where the users are.
+  scope "admin" do
+    get "worklogs", to: "worklogs/admin#show", as: :worklogs_settings
+    post "worklogs", to: "worklogs/admin#update"
+  end
+
   namespace :worklogs do
     root to: "timesheets#index"
 

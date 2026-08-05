@@ -9,6 +9,7 @@ module Worklogs
 
     before_action :require_login
     authorize_with_global_permission :approve_worklogs
+    before_action :require_approvals_enabled
 
     before_action :load_submission, only: %i[show update]
 
@@ -55,6 +56,13 @@ module Worklogs
     end
 
     private
+
+    # Switching approvals off has to close the door, not only hide it: a
+    # bookmarked approval URL is exactly the thing that outlives a setting
+    # change.
+    def require_approvals_enabled
+      render_404 unless Settings.approvals_enabled?
+    end
 
     def load_submission
       @submission = Submission.includes(:user, :events).find(params[:id])

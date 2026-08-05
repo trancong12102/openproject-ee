@@ -12,22 +12,11 @@ module Worklogs
 
     def initialize(week: nil, tolerance: nil)
       @week = week || Week.current.previous
-      @tolerance = (tolerance || settings["reminder_tolerance"] || 0.5).to_f
+      @tolerance = (tolerance || Settings.reminder_tolerance).to_f
     end
 
-    class << self
-      def settings
-        setting = Setting.plugin_openproject_worklogs
-        setting.is_a?(Hash) ? setting.with_indifferent_access : {}.with_indifferent_access
-      end
-
-      def enabled?
-        ActiveModel::Type::Boolean.new.cast(settings["reminders_enabled"]).present?
-      end
-    end
-
-    def settings
-      self.class.settings
+    def self.enabled?
+      Settings.reminders_enabled?
     end
 
     def call
