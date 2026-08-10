@@ -292,6 +292,11 @@ is safe against real data.
 plugins/openproject-worklogs/script/smoke.sh http://localhost:8080 admin '<password>'
 ```
 
+It signs in with a password, so it cannot be run against an instance that asks
+that account for a second factor — it says so and stops rather than reporting
+forty failures that all mean "not signed in". Somewhere with 2FA on, run
+`verify.rb` instead; it needs no session at all.
+
 44 checks: every page renders, the month sheet draws its week seams, the team
 sheet draws a person per row and opens one up, every export format downloads and
 each workbook really is a zip served as a spreadsheet, an anchored period and

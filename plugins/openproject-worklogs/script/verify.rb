@@ -36,8 +36,15 @@ module WorklogsVerify
       yield
     end
 
+    # Returned by `skip` so that `next run.skip(...)` inside a check block reads
+    # as "there was nothing here to check" rather than as "the block returned
+    # nil", which is what it used to be counted as.
+    SKIPPED = Object.new.freeze
+
     def check(what)
       result = yield
+      return if result.equal?(SKIPPED)
+
       raise Failure, "returned #{result.inspect}" unless result
 
       @passed += 1
@@ -52,6 +59,7 @@ module WorklogsVerify
     # For a check that is only meaningful on an instance that has some data.
     def skip(what, reason)
       puts "  skip  #{what} (#{reason})"
+      SKIPPED
     end
 
     def report

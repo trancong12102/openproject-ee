@@ -51,13 +51,35 @@ check "the application answers" 200 "$(curl -s -o /dev/null -w '%{http_code}' "$
 
 echo
 echo "Signing in as $USER_LOGIN"
-TOKEN="$(curl -s -c "$JAR" "$BASE/login" \
-  | grep -o 'name="authenticity_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')"
-LOGIN_CODE="$(curl -s -b "$JAR" -c "$JAR" -o /dev/null -w '%{http_code}' -X POST "$BASE/login" \
+# The token in the page *head*, not the one inside the form: OpenProject scopes
+# a form's own token to that form's action, so a token lifted from one form is
+# refused by another with "Can't verify CSRF token authenticity".
+token_from() {
+  curl -s -b "$JAR" -c "$JAR" "$BASE$1" \
+    | grep -o '<meta name="csrf-token" content="[^"]*"' | head -1 | sed 's/.*content="//;s/"//'
+}
+
+# An instance with a direct-login provider sends /login straight on to the
+# identity provider, so there is no page there to read a token out of. This one
+# is served whether or not passwords are the way in.
+TOKEN="$(token_from /login)"
+[[ -z "$TOKEN" ]] && TOKEN="$(token_from /account/lost_password)"
+LOGIN="$(curl -s -b "$JAR" -c "$JAR" -o /dev/null -w '%{http_code} %{redirect_url}' -X POST "$BASE/login" \
   --data-urlencode "authenticity_token=$TOKEN" \
   --data-urlencode "username=$USER_LOGIN" \
   --data-urlencode "password=$PASSWORD")"
-check "sign-in is accepted" 302 "$LOGIN_CODE"
+check "sign-in is accepted" 302 "${LOGIN%% *}"
+
+# A password on its own is not a session on an instance that asks for a second
+# factor, and every check after this one would fail with a bare 302 that says
+# nothing about why.
+if [[ "$LOGIN" == *two_factor_authentication* ]]; then
+  echo
+  echo "  This instance asks $USER_LOGIN for a second factor, which cannot be" >&2
+  echo "  answered from a script. Run the smoke test where 2FA is off, and the" >&2
+  echo "  in-process checks (script/verify.rb) against this one." >&2
+  exit 3
+fi
 
 echo
 echo "Pages"
