@@ -9,6 +9,10 @@ module OpenProject
     # is being read — before Zeitwerk is set up — so nothing under `app/` is
     # resolvable yet. `Worklogs::Settings::DEFAULTS` points back at this.
     SETTINGS_DEFAULTS = {
+      # nil means "follow core". Core's own `hours_per_day` is declared
+      # `format: :integer`, so an instance whose day is seven and a half hours
+      # has no way to say so there; this one takes a fraction.
+      "hours_per_day" => nil,
       "approvals_enabled" => true,
       "lock_approved_periods" => true,
       "allow_self_approval" => false,

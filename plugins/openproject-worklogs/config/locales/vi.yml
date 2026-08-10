@@ -345,6 +345,11 @@ vi:
       error_worklogs_not_reopenable: "Không thể mở lại tuần này."
     settings:
       description: "Cách hoạt động của duyệt, khoá kỳ và nhắc nhở cho toàn hệ thống."
+      working_time: "Thời gian làm việc"
+      hours_per_day: "Số giờ một ngày làm việc"
+      hours_per_day_text: "Định mức một ngày đầy đủ cho người chưa có lịch làm việc riêng. Để trống thì theo cài đặt chung của hệ thống (%{core}h) — cài đặt đó chỉ nhận số nguyên, nên ngày 7,5 giờ thì phải điền ở đây."
+      working_days_text: "Ngày làm việc trong tuần: %{days}."
+      working_days_link: "Đổi ngày làm việc, hoặc khai ngày lễ"
       approvals_enabled: "Cho phép gửi tuần đi duyệt"
       approvals_enabled_text: "Thêm nút gửi duyệt vào bảng chấm công và hàng đợi duyệt cho người có quyền duyệt. Tắt đi sẽ ẩn cả hai và đóng URL của chúng; những gì đã gửi vẫn được giữ."
       lock_approved_periods: "Khoá tuần sau khi gửi duyệt"

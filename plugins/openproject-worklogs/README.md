@@ -237,6 +237,12 @@ they are granted separately is the day somebody has to explain the difference.
 `Setting.plugin_openproject_worklogs` hash and read through `Worklogs::Settings`,
 which casts them so nothing downstream has to remember that `"0"` is false:
 
+- **Hours in a working day** — what a full day is worth for anybody who keeps no
+  working hours of their own. It exists because core's `hours_per_day` is
+  declared `format: :integer`, so an instance whose day is seven and a half hours
+  cannot say so there: 7.5 is silently truncated. Left empty, the plugin follows
+  core. A per-user `UserWorkingHours` record still wins over both — the order is
+  personal schedule, then this setting, then core's.
 - **Approvals** on or off. Off hides the submit button and the approvals queue
   and closes their URLs; nothing already submitted is deleted.
 - **Lock submitted weeks** — separable from approvals on purpose. Some teams want
@@ -266,13 +272,14 @@ docker compose exec web bin/rails runner \
   plugins/openproject-worklogs/script/verify.rb
 ```
 
-97 checks: that every constant still resolves, that the three permissions and
+99 checks: that every constant still resolves, that the three permissions and
 both menus registered, that every routed action is covered by a permission, that
 core's `TimeEntries` contracts still call our lock validation on update, delete
 and both directions of a move, that periods step and anchor, that a month's weeks
 cover it end to end and lock a day at a time, that every report filter reaches
 SQL and that a typed `%` is a character rather than a wildcard, that settings
-round-trip and cast, that the team sheet measures a balance against what was
+round-trip and cast and that a fractional working day survives both the form
+and the capacity calendar, that the team sheet measures a balance against what was
 owed by today and cannot be widened past `TimeEntry.visible`, that a workbook is
 a zip of well-formed XML whose figures are numbers and whose sheet names Excel
 will accept, that the reminder job is on the cron table hourly, and that en and
@@ -285,7 +292,7 @@ is safe against real data.
 plugins/openproject-worklogs/script/smoke.sh http://localhost:8080 admin '<password>'
 ```
 
-43 checks: every page renders, the month sheet draws its week seams, the team
+44 checks: every page renders, the month sheet draws its week seams, the team
 sheet draws a person per row and opens one up, every export format downloads and
 each workbook really is a zip served as a spreadsheet, an anchored period and
 every new filter answer, a nonsense span falls back instead of erroring, the fingerprinted asset is served

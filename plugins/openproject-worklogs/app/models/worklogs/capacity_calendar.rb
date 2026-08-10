@@ -63,8 +63,15 @@ module Worklogs
       return 0.0 unless working_day?(user_id, date)
 
       schedule = schedule_for(user_id, date)
-      hours = schedule ? schedule.public_send(:"#{weekday_name(date)}_hours") : Setting.hours_per_day
+      hours = schedule ? schedule.public_send(:"#{weekday_name(date)}_hours") : default_hours
       hours.to_f
+    end
+
+    # What a working day is worth for somebody with no schedule of their own.
+    # The plugin's setting first because core's is `format: :integer` and a
+    # seven-and-a-half-hour day would be silently truncated there.
+    def default_hours
+      @default_hours ||= Settings.hours_per_day || Setting.hours_per_day
     end
 
     def working_weekdays

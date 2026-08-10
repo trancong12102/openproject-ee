@@ -192,6 +192,16 @@ run.group("Settings") do
       cast["reminder_hour"] == 17 && cast["reminder_tolerance"] == 1.25
   end
 
+  # The whole reason this setting exists: core's hours_per_day is an integer,
+  # so a seven-and-a-half-hour day cannot be said there at all.
+  run.check("a fractional day survives the form, and a blank one means \"follow core\"") do
+    cast = Worklogs::Settings.sanitise("hours_per_day" => "7.5")
+    blank = Worklogs::Settings.sanitise("hours_per_day" => "")
+    silly = Worklogs::Settings.sanitise("hours_per_day" => "40")
+
+    cast["hours_per_day"] == 7.5 && blank["hours_per_day"].nil? && silly["hours_per_day"] == 24
+  end
+
   run.check("out-of-range values fall back instead of being stored") do
     cast = Worklogs::Settings.sanitise(
       "reminder_weekday" => "99", "reminder_hour" => "-4", "reminder_tolerance" => "-3"
@@ -348,6 +358,28 @@ run.group("Capacity") do
       next run.skip("non-working day", "the whole week is a working week") if off.empty?
 
       off.all? { |d| calendar.hours_for(user.id, d).zero? && calendar.non_working_reason(user.id, d) }
+    end
+
+    # A per-user schedule still wins; this is only about everybody else.
+    run.check("without a schedule of their own, a day is worth what the setting says") do
+      if UserWorkingHours.where(user_id: user.id).exists?
+        next run.skip("plugin hours_per_day", "this user keeps working hours of their own")
+      end
+
+      original = Setting.plugin_openproject_worklogs
+      begin
+        Setting.plugin_openproject_worklogs =
+          Worklogs::Settings.sanitise(Worklogs::Settings.raw.merge("hours_per_day" => "7.5"))
+        Worklogs::Settings.invalidate!
+
+        fresh = Worklogs::CapacityCalendar.new(user_ids: [user.id], range: week.range)
+        working = week.dates.find { |date| fresh.working_day?(user.id, date) }
+
+        working.nil? || fresh.hours_for(user.id, working) == 7.5
+      ensure
+        Setting.plugin_openproject_worklogs = original
+        Worklogs::Settings.invalidate!
+      end
     end
 
     run.check("the week total is the sum of its days") do

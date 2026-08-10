@@ -12,6 +12,32 @@
 <section class="admin--edit-section">
   <%= styled_form_tag({ action: :update }, method: :post, id: "worklogs-settings-form") do %>
     <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t("worklogs.settings.working_time") %></legend>
+
+      <div class="form--field">
+        <label class="form--label" for="hours_per_day"><%= t("worklogs.settings.hours_per_day") %></label>
+        <div class="form--field-container">
+          <%= styled_text_field_tag "hours_per_day", @settings.hours_per_day,
+                                    type: :number, step: "0.25", min: "0", max: "24",
+                                    placeholder: Setting.hours_per_day,
+                                    container_class: "-xslim" %>
+        </div>
+        <div class="form--field-instructions">
+          <%= t("worklogs.settings.hours_per_day_text", core: Setting.hours_per_day) %>
+        </div>
+      </div>
+
+      <%# Read-only on purpose: both of these are core's, and a second place to
+          change them is a second place for them to disagree. %>
+      <div class="form--field">
+        <div class="form--field-instructions">
+          <%= t("worklogs.settings.working_days_text", days: working_weekday_names) %>
+          <%= link_to t("worklogs.settings.working_days_link"), admin_settings_working_days_and_hours_path %>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="form--fieldset">
       <legend class="form--fieldset-legend"><%= t("worklogs.approval.title") %></legend>
 
       <div class="form--field">

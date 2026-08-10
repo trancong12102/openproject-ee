@@ -345,6 +345,11 @@ en:
       error_worklogs_not_reopenable: "This week cannot be reopened."
     settings:
       description: "How approvals, locking and reminders behave for everyone on this instance."
+      working_time: "Working time"
+      hours_per_day: "Hours in a working day"
+      hours_per_day_text: "What a full day is worth for somebody who has no working hours of their own. Leave it empty to follow the instance setting (%{core}h), which only takes whole hours — put 7.5 here if that is what your day is."
+      working_days_text: "Working days are %{days}."
+      working_days_link: "Change them, or add a public holiday"
       approvals_enabled: "Let people submit weeks for approval"
       approvals_enabled_text: "Adds the submit button to the timesheet and the approvals queue for anyone with the approval permission. Turning it off hides both and closes their URLs; nothing already submitted is lost."
       lock_approved_periods: "Lock a week once it is submitted"

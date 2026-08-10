@@ -67,6 +67,8 @@ check "the team sheet renders"       200 "$(status /worklogs/team)"
 check "the coverage page renders"    200 "$(status /worklogs/coverage)"
 check "the approvals queue renders"  200 "$(status /worklogs/approvals)"
 check "the settings page renders"    200 "$(status /admin/worklogs)"
+# The field core cannot offer, because core's own hours_per_day is an integer.
+check "it offers a fractional day"   1 "$(body /admin/worklogs | grep -c 'name="hours_per_day"')"
 check "the grid fragment answers"    200 "$(status /worklogs/grid)"
 
 echo

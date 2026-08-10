@@ -54,6 +54,7 @@ module Worklogs
 
           case key
           when *BOOLEANS then boolean(value)
+          when "hours_per_day" then hours(value)
           when "reminder_weekday" then within(value.to_i, WEEKDAYS, DEFAULTS[key])
           when "reminder_hour" then within(value.to_i, HOURS, DEFAULTS[key])
           when "reminder_tolerance" then [value.to_f.round(2), 0].max
@@ -68,6 +69,15 @@ module Worklogs
         ActiveModel::Type::Boolean.new.cast(value).present?
       end
 
+      # Blank stays blank rather than becoming 0.0: an empty field means "keep
+      # following core", and a day of no hours would quietly tell everybody
+      # they owe nothing.
+      def hours(value)
+        return nil if value.blank?
+
+        value.to_f.round(2).clamp(0, 24)
+      end
+
       def within(value, allowed, fallback)
         allowed.include?(value) ? value : fallback
       end
@@ -75,6 +85,15 @@ module Worklogs
 
     def initialize(values)
       @values = DEFAULTS.merge(values.to_h.stringify_keys)
+    end
+
+    # nil when this instance has not overridden core, so that a caller can tell
+    # "not set" from "set to zero".
+    def hours_per_day
+      value = @values["hours_per_day"]
+      return nil if value.blank?
+
+      value.to_f
     end
 
     def approvals_enabled?

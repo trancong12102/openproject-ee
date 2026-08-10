@@ -15,5 +15,16 @@ module Worklogs
     def hour_options
       (0..23).map { |hour| [format("%02d:00", hour), hour] }
     end
+
+    # Core's working weekdays, written out in the instance's own week order so
+    # the sentence reads the way the calendar looks.
+    def working_weekday_names
+      working = Array(Setting.working_days).map(&:to_i)
+
+      weekday_options.map(&:last)
+                     .select { |cwday| working.include?(cwday) }
+                     .map { |cwday| I18n.l(Date.commercial(2024, 1, cwday), format: "%A") }
+                     .join(", ")
+    end
   end
 end
