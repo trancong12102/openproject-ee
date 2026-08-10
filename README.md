@@ -5,7 +5,7 @@ for internal / education use. It re-bases the official **slim** image and drops 
 a single Rails initializer that overrides the runtime feature gates — no source
 fork, no gem/asset/frontend rebuild.
 
-- **Base image:** `openproject/openproject:17.6-rc-slim` (17.6 release candidate, 2026-06-21)
+- **Base image:** `openproject/openproject:17.7.1-slim` (17.7.1 stable, 2026-08-06)
 - **Patch:** `config/initializers/zzz_force_enterprise.rb`
 
 ## ⚖️ License & legal
@@ -59,7 +59,7 @@ forced to change the password on first login).
 ## Build the image only
 
 ```bash
-docker build -t openproject-ee:17.6-rc .
+docker build -t openproject-ee:17.7.1 .
 ```
 
 Then run it against your own PostgreSQL (slim has no bundled DB):
@@ -69,7 +69,7 @@ Then run it against your own PostgreSQL (slim has no bundled DB):
 docker run --rm \
   -e DATABASE_URL="postgres://user:pass@db/openproject" \
   -e SECRET_KEY_BASE="$(openssl rand -hex 64)" \
-  openproject-ee:17.6-rc ./docker/prod/seeder
+  openproject-ee:17.7.1 ./docker/prod/seeder
 
 # then serve (web listens on :8080)
 docker run -d -p 8080:8080 \
@@ -77,7 +77,7 @@ docker run -d -p 8080:8080 \
   -e SECRET_KEY_BASE="<same-secret-as-above>" \
   -e OPENPROJECT_HOST__NAME="localhost:8080" \
   -e OPENPROJECT_HTTPS="false" \
-  openproject-ee:17.6-rc ./docker/prod/web
+  openproject-ee:17.7.1 ./docker/prod/web
 ```
 
 ## Verify EE is unlocked
@@ -86,24 +86,38 @@ docker run -d -p 8080:8080 \
 curl -s http://localhost:8080/api/v3/configuration | python3 -m json.tool | grep -A40 availableFeatures
 ```
 
-`availableFeatures` should list all 31 symbols. In the UI, Enterprise-gated areas
+`availableFeatures` should list all 35 symbols. In the UI, Enterprise-gated areas
 (Team planner, Boards, Baseline comparison, Work package sharing, …) appear with
 no "upgrade to Enterprise" banners.
 
 ## Upgrading
 
-The patch's feature list was authored for **17.4.0** and last re-verified against
-**17.6-rc** (gate method signatures unchanged; the `ALL_FEATURES` set is still a
-superset — 17.6 dropped `time_entry_time_restrictions` from the EE list, which is
-harmless). When you bump the base tag, the gate method names or the feature list
-may change, and a stale patch fails *silently* (gates fall back to locked). On
-every upgrade:
+The patch's feature list was last re-verified against **17.7.1**: the six gate
+methods still have the same names and arity, and `ALL_FEATURES` was re-derived
+for the release — 35 symbols, up from 31, adding `resource_management`,
+`multiple_active_sprints`, `sprint_sharing` and `xwiki_integration`. When you
+bump the base tag, the gate method names or the feature list may change, and a
+stale patch fails *silently* (gates fall back to locked). On every upgrade:
 
 1. Bump the tag in `Dockerfile` and the `image:` in `docker-compose.yml`.
-2. Re-check the feature list against `config/locales/en.yml` (`en.ee.features`)
-   and `EnterpriseToken.allows_to?(:…)` call sites in the new tag; update
-   `ALL_FEATURES` in the initializer.
-3. Re-check the method signatures in `app/models/enterprise_token.rb`.
+2. Re-derive the feature list from the new image — the *union* of the labels in
+   `en.ee.features`, every `allows_to?(:…)` call site and every
+   `enterprise_feature:` declaration, because some gates have no label:
+
+   ```bash
+   docker run --rm --entrypoint bash openproject/openproject:<tag>-slim -lc '
+     ruby -ryaml -e "puts YAML.load_file(%q(/app/config/locales/en.yml))[%q(en)][%q(ee)][%q(features)].keys"
+     grep -rhoE "allows_to\?\(:[a-z_]+" /app/app /app/modules /app/lib /app/config | sed "s/allows_to?(://"
+     grep -rhoE "enterprise_feature: *:?\"?[a-z_]+" /app/app /app/modules /app/config | sed -E "s/enterprise_feature: *:?\"?//"
+   ' | sort -u
+   ```
+
+   Then update `ALL_FEATURES` in the initializer.
+3. Re-check the method signatures in `app/models/enterprise_token.rb`, and that
+   nothing new bypasses them:
+   `grep -rhoE "EnterpriseToken\.[a-z_]+[?!]?" /app/app /app/modules | sort | uniq -c`
+   — every gate should still funnel through `allows_to?`, `active?`,
+   `available_features`, `trialling_features`, `hide_banners?` or `user_limit`.
 4. Rebuild and re-run the verify step above.
 5. Re-verify the Worklogs plugin, which hooks into far more of core than the
    gate override does and breaks in more ways:

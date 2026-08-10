@@ -8,7 +8,7 @@
 
 x-op-app: &app
   build: .
-  image: openproject-ee:17.6-rc
+  image: openproject-ee:17.7.1
   environment: &app-env
     RAILS_ENV: production
     DATABASE_URL: "postgres://openproject:${POSTGRES_PASSWORD:-openproject}@db:5432/openproject?pool=20&encoding=unicode&reconnect=true"

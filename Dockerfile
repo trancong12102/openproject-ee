@@ -1,15 +1,16 @@
 # syntax=docker/dockerfile:1
 
 # OpenProject with Enterprise features unlocked, for self-hosted / education use.
-# Base: official slim image, pinned to the 17.6 release candidate (17.6-rc).
-# 17.6 has not been released yet; -rc is built from the release/17.6 branch and
-# is the newest shippable 17.6 line (dev-slim is already 17.7.0-dev).
+# Base: official slim image, pinned to the 17.7.1 stable release (2026-08-06) —
+# a patch release over 17.7.0 with four bug fixes and no migrations of its own.
+# A stable tag rather than the -rc line this used to track: 17.7 is out, and an
+# exact patch version is the only tag that cannot move under a running cluster.
 #
 # This is a GPLv3 modification of OpenProject. It only overrides runtime feature
 # gates (see config/initializers/zzz_force_enterprise.rb) — no gem, asset, or
 # frontend rebuild is performed. Do NOT redistribute this image under the
 # "OpenProject" trademark. See README.md for the licensing notes.
-FROM openproject/openproject:17.6-rc-slim
+FROM openproject/openproject:17.7.1-slim
 
 # Rails auto-loads every *.rb in config/initializers/ on boot. The zzz_ prefix
 # sorts it last; the patch itself defers via to_prepare so load order is moot.

@@ -9,7 +9,7 @@
 # the closed-source `openproject-token` gem is bypassed entirely, because every
 # caller funnels through the class methods overridden below.
 #
-# Pinned to the EE feature set of OpenProject 17.4.0.
+# Pinned to the EE feature set of OpenProject 17.7.1.
 # RE-VERIFY ON EVERY UPGRADE — method names and the feature list can change:
 #   - gates:   app/models/enterprise_token.rb            (all class methods)
 #   - labels:  config/locales/en.yml -> en.ee.features
@@ -17,7 +17,13 @@
 # ---------------------------------------------------------------------------
 
 module ForceEnterprise
-  # Complete EE feature set as of OpenProject 17.4.0 (31 features).
+  # Every gated feature in 17.7.1 (35): the union of the labels in
+  # `en.ee.features`, every `allows_to?(:...)` call site, and every
+  # `enterprise_feature:` declaration. The union rather than the label list on
+  # purpose — a few gates (resource_management, sprint_sharing,
+  # xwiki_integration, time_entry_time_restrictions) are checked in code without
+  # carrying a label, and a feature missing from this set is silently *locked*
+  # in the Angular frontend even though the backend gate says yes.
   ALL_FEATURES = Set.new(%i[
     baseline_comparison
     board_view
@@ -34,6 +40,7 @@ module ForceEnterprise
     ldap_groups
     mcp_server
     meeting_templates
+    multiple_active_sprints
     nextcloud_sso
     one_drive_sharepoint_file_storage
     placeholder_users
@@ -41,7 +48,9 @@ module ForceEnterprise
     project_creation_wizard
     project_list_sharing
     readonly_work_packages
+    resource_management
     scim_api
+    sprint_sharing
     sso_auth_providers
     team_planner_view
     time_entry_time_restrictions
@@ -50,6 +59,7 @@ module ForceEnterprise
     work_package_query_relation_columns
     work_package_sharing
     work_package_subject_generation
+    xwiki_integration
   ]).freeze
 
   # Every backend gate funnels through allows_to?. The Angular frontend reads
